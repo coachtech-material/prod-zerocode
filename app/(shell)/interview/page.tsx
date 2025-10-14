@@ -12,8 +12,8 @@ export default function InterviewBookingPage() {
           面談サポート
         </span>
         <h1 className="text-3xl font-bold text-slate-900">面談予約</h1>
-        <p className="mx-auto max-w-4xl text-sm text-slate-600">
-          受講修了時に改めて学習やキャリアに関するご相談をオンライン面談にて承ります。以下のカレンダーからご都合の良い日時をお選びください。
+        <p className="mx-auto max-w-5xl text-sm text-slate-600">
+          受講修了時に改めて学習やキャリアに関するご相談を承ります。以下のカレンダーからご都合の良い日時をお選びください。
         </p>
       </div>
       <div className="rounded-3xl border border-brand-blue/20 bg-white p-6 shadow-[0_20px_45px_rgba(30,75,158,0.12)] lg:p-10">
