@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --color-blue: #0281CA;
+  --color-sky: #7DD1FD;
+  --color-yellow: #FFFF55;
+  --color-background: #F6FBFF;
+  --color-background-strong: #E9F6FF;
+  --color-surface: rgba(255, 255, 255, 0.9);
+  --color-surface-strong: rgba(241, 250, 255, 0.96);
+  --color-surface-soft: rgba(2, 129, 202, 0.08);
+  --color-border: rgba(2, 129, 202, 0.22);
+  --color-text: #0B2A43;
+  --color-text-muted: rgba(11, 42, 67, 0.68);
+  --color-focus: rgba(2, 129, 202, 0.35);
+  --color-code-bg: rgba(2, 129, 202, 0.08);
+  --color-content-background: rgba(243, 249, 255, 0.95);
+  --color-primary-button: #111111;
+  --color-outline: #D1D5DB;
+  --user-hero: #1E4B9E;
+  --admin-hero: #0F766E;
+}
+
+html, body, #__next { height: 100%; }
+body {
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(125, 209, 253, 0.28) 0%, var(--color-background) 45%),
+    radial-gradient(160% 160% at 100% 0%, rgba(2, 129, 202, 0.18) 0%, var(--color-background-strong) 55%),
+    linear-gradient(180deg, rgba(245, 251, 255, 0.95) 0%, rgba(233, 246, 255, 0.98) 50%, #f7fbff 100%);
+  color: var(--color-text);
+}
+
+/* Scrollbar thin styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(2, 129, 202, 0.28) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background-color: rgba(2, 129, 202, 0.3); border-radius: 9999px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Focus ring utility for keyboard users */
+.focus-ring { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-0; }
+
+/* Remove blue focus outline in editor */
+.ProseMirror:focus { outline: none; }
+
+/* Global heading scale */
+h1 { font-size: 1.5rem !important; line-height: 1.4 !important; }  /* ~text-2xl */
+h2 { font-size: 1.25rem !important; line-height: 1.4 !important; } /* ~text-xl */
+h3 { font-size: 1.125rem !important; line-height: 1.4 !important; } /* ~text-lg */
