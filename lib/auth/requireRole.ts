@@ -11,7 +11,7 @@ export async function requireAuth(): Promise<{ userId: string; supabase: Supabas
   return { userId: user.id, supabase };
 }
 
-async function getOrCreateProfile(supabase: SupabaseClient, userId: string): Promise<Profile> {
+async function resolveProfile(supabase: SupabaseClient, userId: string): Promise<Profile> {
   const columnSelection = `
     id,
     role,
@@ -48,7 +48,7 @@ export async function requireRole(
   options?: { redirectTo?: string; signOutOnFail?: boolean }
 ): Promise<{ userId: string; profile: Profile }> {
   const { userId, supabase } = await requireAuth();
-  const profile = await getOrCreateProfile(supabase, userId);
+  const profile = await resolveProfile(supabase, userId);
   if (profile.login_disabled) {
     await supabase.auth.signOut();
     redirect('/login?error=suspended');
@@ -60,4 +60,9 @@ export async function requireRole(
     redirect(options?.redirectTo ?? '/login');
   }
   return { userId, profile };
+}
+
+export async function getOrCreateProfile(userId: string): Promise<Profile> {
+  const supabase = createServerSupabaseClient();
+  return resolveProfile(supabase, userId);
 }
