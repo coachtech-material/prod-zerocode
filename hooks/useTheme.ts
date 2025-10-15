@@ -15,7 +15,11 @@ function getInitialTheme(): Theme {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => getInitialTheme());
+  const [theme, setThemeState] = useState<Theme>('light');
+
+  useEffect(() => {
+    setThemeState(getInitialTheme());
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
