@@ -122,7 +122,7 @@ export async function uploadThumbnail(courseId: string, formData: FormData) {
   if (file.size > 5 * 1024 * 1024) redirect(`/admin/courses/${courseId}?error=` + encodeURIComponent('ファイルサイズは5MB以下にしてください'));
   const ext = file.type === 'image/png' ? 'png' : 'jpg';
   const path = `${courseId}/thumb-${crypto.randomUUID()}.${ext}`;
-  const { error: upErr } = await supabase.storage.from('thumbnails').upload(path, file, { cacheControl: '3600', upsert: false });
+  const { error: upErr } = await supabase.storage.from('thumbnails').upload(path, file, { cacheControl: '604800', upsert: false });
   if (upErr) redirect(`/admin/courses/${courseId}?error=` + encodeURIComponent(upErr.message));
   const { data: pub } = supabase.storage.from('thumbnails').getPublicUrl(path);
   const publicUrl = pub.publicUrl;
