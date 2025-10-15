@@ -16,9 +16,11 @@ export default async function CourseDetailLearner({ params, searchParams }: { pa
   const html = course ? await renderMarkdownForView(course.description_md || '') : '';
 
   const secsByChapter = new Map<string, any[]>();
+  const progressMap = new Map<string, any>();
+  for (const p of progress) progressMap.set(p.lesson_id, p);
   for (const l of lessons) {
     if (!secsByChapter.has(l.chapter_id)) secsByChapter.set(l.chapter_id, []);
-    const pr = progress.find((p: any) => p.lesson_id === l.id) || {};
+    const pr = progressMap.get(l.id) || {};
     secsByChapter.get(l.chapter_id)!.push({ ...l, is_unlocked: pr.is_unlocked, is_completed: pr.is_completed });
   }
 

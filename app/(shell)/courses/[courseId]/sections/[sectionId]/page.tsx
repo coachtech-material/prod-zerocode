@@ -1,8 +1,7 @@
 import { requireRole } from '@/lib/auth/requireRole';
-import { getSectionWithGate, getCourseTree } from '@/lib/learners/queries';
+import { getSectionPageData, LessonMeta } from '@/lib/learners/queries';
 import { renderMarkdownForView } from '@/lib/learners/markdownView';
 import Link from 'next/link';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import ToastFromQuery from '@/components/ui/ToastFromQuery';
 import { addTimeSpent } from './actions';
 import SectionToc from '@/components/learners/SectionToc';
@@ -11,49 +10,42 @@ import SectionCompletionPanel from '@/components/learners/SectionCompletionPanel
 
 export default async function SectionView({ params }: { params: { courseId: string; sectionId: string } }) {
   await requireRole(['user']);
-  const data = await getSectionWithGate(params.courseId, params.sectionId);
-  if (!data) return <div className="rounded-xl border border-brand-sky/20 bg-white p-4">閲覧できません。</div>;
-  const { lesson, progress, unlocked, content_md } = data;
-  const html = unlocked ? await renderMarkdownForView(content_md || '') : '<p class="text-slate-500">このセクションはまだ閲覧できません。</p>';
+  const payload = await getSectionPageData(params.courseId, params.sectionId);
+  if (!payload) return <div className="rounded-xl border border-brand-sky/20 bg-white p-4">閲覧できません。</div>;
 
-  // Fetch course basic info for breadcrumbs
-  const supabase = createServerSupabaseClient();
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id,title')
-    .eq('id', params.courseId)
-    .single();
-
+  const { course, chapters, lessons, progress, section, content_md } = payload;
+  const html = await renderMarkdownForView(content_md || '');
   const sendTime = addTimeSpent.bind(null, params.courseId, params.sectionId);
 
-  // Build table of contents and prev/next from course tree
-  const tree = await getCourseTree(params.courseId);
-  const chapters = (tree?.chapters as any[]) || [];
-  const lessons = (tree?.lessons as any[]) || [];
-  const progressList = (tree?.progress as any[]) || [];
+  // Build progress map to mark completed items in the table of contents
+  const progressList = (progress as Array<{ lesson_id: string; is_unlocked?: boolean; is_completed?: boolean }>) || [];
   const progressMap = new Map<string, { is_unlocked?: boolean; is_completed?: boolean }>();
   for (const p of progressList) progressMap.set(p.lesson_id, { is_unlocked: p.is_unlocked, is_completed: p.is_completed });
 
+  // Organize lessons per chapter for the sidebar navigator
+  const chapterList = chapters as Array<{ id: string; title: string; chapter_sort_key: number | null }>;
+  const lessonList = lessons as LessonMeta[];
   const sectionsByChapter: Record<string, { id: string; title: string; section_sort_key: number; is_completed?: boolean }[]> = {};
   const completedSectionIds = new Set<string>();
-  for (const ch of chapters) sectionsByChapter[ch.id] = [];
-  for (const s of lessons) {
-    const arr = sectionsByChapter[s.chapter_id] || (sectionsByChapter[s.chapter_id] = []);
-    const isCompleted = Boolean(progressMap.get(s.id)?.is_completed);
-    if (isCompleted) completedSectionIds.add(s.id);
-    arr.push({ id: s.id, title: s.title, section_sort_key: s.section_sort_key, is_completed: isCompleted });
+  for (const ch of chapterList) sectionsByChapter[ch.id] = [];
+  for (const lesson of lessonList) {
+    const arr = sectionsByChapter[lesson.chapter_id] || (sectionsByChapter[lesson.chapter_id] = []);
+    const isCompleted = Boolean(progressMap.get(lesson.id)?.is_completed);
+    if (isCompleted) completedSectionIds.add(lesson.id);
+    arr.push({ id: lesson.id, title: lesson.title, section_sort_key: lesson.section_sort_key, is_completed: isCompleted });
   }
-  for (const ch of chapters) sectionsByChapter[ch.id].sort((a,b)=> (a.section_sort_key??0) - (b.section_sort_key??0));
+  for (const ch of chapterList) sectionsByChapter[ch.id].sort((a, b) => (a.section_sort_key ?? 0) - (b.section_sort_key ?? 0));
+
+  // Determine navigation targets
   const ordered: { id: string; title: string }[] = [];
-  for (const ch of chapters) for (const s of sectionsByChapter[ch.id]) ordered.push({ id: s.id, title: s.title });
-  const idx = ordered.findIndex((s) => s.id === params.sectionId);
+  for (const ch of chapterList) for (const item of sectionsByChapter[ch.id]) ordered.push({ id: item.id, title: item.title });
+  const idx = ordered.findIndex((item) => item.id === params.sectionId);
   const prev = idx > 0 ? ordered[idx - 1] : null;
   const next = idx >= 0 && idx < ordered.length - 1 ? ordered[idx + 1] : null;
 
-  const isCompleted = Boolean(progress?.is_completed);
-  if (isCompleted) {
-    completedSectionIds.add(params.sectionId);
-  }
+  const sectionProgress = progressMap.get(params.sectionId);
+  const isCompleted = Boolean(sectionProgress?.is_completed);
+  if (isCompleted) completedSectionIds.add(params.sectionId);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 lg:px-0">
@@ -74,7 +66,7 @@ export default async function SectionView({ params }: { params: { courseId: stri
           </li>
           <li aria-hidden>›</li>
           <li aria-current="page" className="text-slate-700 truncate max-w-[60ch]">
-            {lesson.title}
+            {section.title}
           </li>
         </ol>
       </nav>
@@ -83,8 +75,8 @@ export default async function SectionView({ params }: { params: { courseId: stri
           <LessonHeader
             courseId={params.courseId}
             sectionId={params.sectionId}
-            title={lesson.title}
-            durationMin={lesson.duration_min}
+            title={section.title}
+            durationMin={section.duration_min}
             initialCompleted={isCompleted}
           />
           <div>
@@ -97,7 +89,7 @@ export default async function SectionView({ params }: { params: { courseId: stri
               <div className="mb-6 lg:mb-0 lg:w-72 xl:w-80 shrink-0 lg:sticky lg:top-24 lg:pl-4 xl:pl-6">
                 <p className="mb-4 hidden text-xs font-semibold uppercase tracking-wide text-brand lg:block">コースメニュー</p>
                 <SectionToc
-                  chapters={chapters.map((c:any)=>({ id: c.id, title: c.title, chapter_sort_key: c.chapter_sort_key }))}
+                  chapters={chapterList.map((c) => ({ id: c.id, title: c.title, chapter_sort_key: c.chapter_sort_key }))}
                   sectionsByChapter={sectionsByChapter}
                   courseId={params.courseId}
                   currentSectionId={params.sectionId}

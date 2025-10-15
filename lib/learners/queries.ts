@@ -1,5 +1,23 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+export type LessonMeta = {
+  id: string;
+  title: string;
+  chapter_id: string;
+  course_id: string;
+  duration_min: number | null;
+  section_sort_key: number | null;
+};
+
+export type SectionPageData = {
+  course: Record<string, any>;
+  chapters: Array<Record<string, any>>;
+  lessons: Array<Record<string, any>>;
+  progress: Array<Record<string, any>>;
+  section: LessonMeta;
+  content_md: string;
+};
+
 export async function getAllPublishedCoursesWithTotals() {
   const supabase = createServerSupabaseClient();
   const { data: courses } = await supabase
@@ -30,63 +48,97 @@ export async function getAllPublishedCoursesWithTotals() {
 
 export async function getCourseTree(courseId: string) {
   const supabase = createServerSupabaseClient();
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id,title,description_md,thumbnail_url,overview_video_url')
-    .eq('id', courseId)
-    .eq('status', 'published')
-    .single();
+  const [
+    { data: course },
+    { data: chapters },
+    { data: lessons },
+    { data: progress },
+  ] = await Promise.all([
+    supabase
+      .from('courses')
+      .select('id,title,description_md,thumbnail_url,overview_video_url')
+      .eq('id', courseId)
+      .eq('status', 'published')
+      .single(),
+    supabase
+      .from('chapters')
+      .select('id,title,chapter_sort_key')
+      .eq('course_id', courseId)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('chapter_sort_key'),
+    supabase
+      .from('lessons')
+      .select('id,title,chapter_id,section_sort_key,status,duration_min')
+      .eq('course_id', courseId)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('chapter_id')
+      .order('section_sort_key'),
+    supabase
+      .from('progress')
+      .select('lesson_id,is_unlocked,is_completed')
+      .eq('course_id', courseId),
+  ]);
   if (!course) return null;
-
-  const { data: chapters } = await supabase
-    .from('chapters')
-    .select('id,title,chapter_sort_key')
-    .eq('course_id', courseId)
-    .eq('status', 'published')
-    .is('deleted_at', null)
-    .order('chapter_sort_key');
-
-  const { data: lessons } = await supabase
-    .from('lessons')
-    .select('id,title,chapter_id,section_sort_key,status,duration_min')
-    .eq('course_id', courseId)
-    .eq('status', 'published')
-    .is('deleted_at', null)
-    .order('chapter_id')
-    .order('section_sort_key');
-
-  const { data: progress } = await supabase
-    .from('progress')
-    .select('lesson_id,is_unlocked,is_completed')
-    .eq('course_id', courseId);
 
   return { course, chapters: chapters || [], lessons: lessons || [], progress: progress || [] };
 }
 
-export async function getSectionWithGate(courseId: string, sectionId: string) {
+export async function getSectionPageData(courseId: string, sectionId: string): Promise<SectionPageData | null> {
   const supabase = createServerSupabaseClient();
-  const { data: lesson } = await supabase
-    .from('lessons')
-    .select('id,title,chapter_id,course_id,duration_min,section_sort_key')
-    .eq('id', sectionId)
-    .eq('course_id', courseId)
-    .eq('status', 'published')
-    .single();
-  if (!lesson) return null;
-  const { data: progress } = await supabase
-    .from('progress')
-    .select('is_unlocked,is_completed')
-    .eq('course_id', courseId)
-    .eq('lesson_id', sectionId)
-    .single();
 
-  // Ignore lock: always fetch content and treat as unlocked
-  const { data } = await supabase
-    .from('lessons')
-    .select('content_md')
-    .eq('id', sectionId)
-    .single();
-  const content_md = (data as any)?.content_md || '';
-  const unlocked = true;
-  return { lesson, progress, unlocked, content_md };
+  const [
+    { data: course },
+    { data: chapters },
+    { data: lessons },
+    { data: progress },
+    { data: sectionDetail },
+  ] = await Promise.all([
+    supabase
+      .from('courses')
+      .select('id,title,description_md,thumbnail_url,overview_video_url')
+      .eq('id', courseId)
+      .eq('status', 'published')
+      .single(),
+    supabase
+      .from('chapters')
+      .select('id,title,chapter_sort_key')
+      .eq('course_id', courseId)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('chapter_sort_key'),
+    supabase
+      .from('lessons')
+      .select('id,title,chapter_id,section_sort_key,status,duration_min')
+      .eq('course_id', courseId)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('chapter_id')
+      .order('section_sort_key'),
+    supabase
+      .from('progress')
+      .select('lesson_id,is_unlocked,is_completed,time_spent_sec')
+      .eq('course_id', courseId),
+    supabase
+      .from('lessons')
+      .select('id,title,chapter_id,course_id,duration_min,section_sort_key,content_md')
+      .eq('id', sectionId)
+      .eq('course_id', courseId)
+      .eq('status', 'published')
+      .maybeSingle(),
+  ]);
+
+  if (!course || !sectionDetail) return null;
+
+  const { content_md, ...section } = sectionDetail as LessonMeta & { content_md?: string | null };
+
+  return {
+    course: (course || {}) as Record<string, any>,
+    chapters: (chapters || []) as Array<Record<string, any>>,
+    lessons: (lessons || []) as Array<Record<string, any>>,
+    progress: (progress || []) as Array<Record<string, any>>,
+    section,
+    content_md: content_md || '',
+  };
 }

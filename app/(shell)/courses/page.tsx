@@ -26,15 +26,18 @@ export default async function LearnerCoursesPage() {
   }
 
   // Precompute summaries server-side
+  const courseList = (courses as any[]) || [];
   const summaries = new Map<string, string>();
-  for (const c of courses as any[]) {
-    summaries.set(c.id, await toSummary(c.description_md || ''));
-  }
+  await Promise.all(
+    courseList.map(async (c) => {
+      summaries.set(c.id, await toSummary(c.description_md || ''));
+    }),
+  );
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">公開コース</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {(courses as any[]).map((c) => {
+        {courseList.map((c) => {
           const descId = `desc-${c.id}`;
           const summary = summaries.get(c.id) || '';
           return (
@@ -76,7 +79,7 @@ export default async function LearnerCoursesPage() {
           );
         })}
 
-        {!courses.length && (
+        {!courseList.length && (
           <div className="text-slate-500">公開中のコースはありません</div>
         )}
       </div>
