@@ -6,8 +6,6 @@ export const metadata = {
   title: 'zerocode',
 };
 
-export const dynamic = 'force-dynamic';
-
 const themeInitScript = `(() => {
   const storageKey = 'theme';
   try {
@@ -26,7 +24,7 @@ const themeInitScript = `(() => {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--accent)]/30 text-[14px] leading-[22px]">
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
         <Toaster />

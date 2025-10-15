@@ -1,25 +1,38 @@
 "use client";
 import { useEffect, useMemo } from 'react';
+import {
+  LayoutDashboard,
+  Users,
+  BookOpen,
+  BarChart3,
+  Settings,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from 'lucide-react';
 import SidebarItem from './SidebarItem';
-import { LayoutDashboard, Users, BookOpen, BarChart3, Settings, ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
 import { onShortcut } from '@/lib/shortcuts';
 
 type Props = {
   role: 'user' | 'staff' | 'admin';
-  collapsed: boolean;
-  onToggle: () => void;
+  expanded: boolean;
+  onExpandToggle: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+  mobileRef: React.RefObject<HTMLDivElement>;
 };
 
-export default function Sidebar({ role, collapsed, onToggle }: Props) {
+export default function Sidebar({ role, expanded, onExpandToggle, mobileOpen, onMobileClose, mobileRef }: Props) {
   useEffect(() => {
-    const off = onShortcut(['cmd'], (e) => {
-      if ((e.key === 'b' || e.key === 'B') && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        onToggle();
+    const off = onShortcut(['cmd'], (event) => {
+      if ((event.key === 'b' || event.key === 'B') && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        onExpandToggle();
       }
     });
     return off;
-  }, [onToggle]);
+  }, [onExpandToggle]);
 
   const items = useMemo(() => {
     if (role === 'user') {
@@ -29,51 +42,89 @@ export default function Sidebar({ role, collapsed, onToggle }: Props) {
         { href: '/test/comfirm', label: '確認テスト', icon: BarChart3 },
         { href: '/interview', label: '面談予約', icon: CalendarClock },
         { href: '/settings', label: '設定', icon: Settings },
-      ];
+      ] as const;
     }
-    // staff/admin: 管理メニューに誘導
     return [
       { href: '/dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
       { href: '/admin/user', label: 'ユーザー一覧', icon: Users },
       { href: '/admin/courses', label: 'コース管理', icon: BookOpen },
       { href: '/admin/test', label: 'テスト管理', icon: BarChart3 },
       { href: '/settings', label: '設定', icon: Settings },
-    ];
+    ] as const;
   }, [role]);
 
   return (
-    <aside
-      className={[
-        'fixed left-0 top-16 bottom-0 z-40 border-r border-[color:var(--sidebar-border)] bg-[color:var(--sidebar-bg)] text-[#C3C7CC] transition-[width] duration-300 ease-in-out shadow-[var(--shadow-1)]',
-        collapsed ? 'w-16' : 'w-60',
-      ].join(' ')}
-    >
-      <div className="flex h-full flex-col gap-2 p-2">
-        <nav className="flex-1 space-y-1">
-          {items.map((it) => (
-            <SidebarItem
-              key={it.href}
-              href={it.href}
-              label={it.label}
-              icon={it.icon}
-              collapsed={collapsed}
-              showIcon={true}
-            />
-          ))}
-        </nav>
-        <button
-          onClick={onToggle}
-          className={[
-            'mb-1 flex h-10 w-full items-center rounded-xl bg-[color:var(--nav-icon-bg)] text-[color:var(--nav-icon-foreground)] hover:bg-[color:var(--nav-icon-hover)] focus-ring',
-            collapsed ? 'justify-center' : 'justify-center gap-2 px-3',
-          ].join(' ')}
-          aria-label={collapsed ? 'サイドバーを開く' : 'サイドバーを閉じる'}
-          title="⌘/Ctrl + B で切替"
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          {!collapsed && <span className="text-sm">サイドバーを閉じる</span>}
-        </button>
+    <>
+      <aside
+        className={[
+          'hidden md:fixed md:inset-y-0 md:flex md:flex-col md:border-r md:border-[var(--sidebar-border)] md:bg-[var(--sidebar-bg)] md:text-[var(--muted)] md:shadow-[0_8px_24px_rgba(0,0,0,0.35)] md:transition-[width] md:duration-200 md:ease-out md:motion-reduce:transition-none',
+          expanded ? 'md:w-64' : 'md:w-14',
+        ].join(' ')}
+        aria-label="メインメニュー"
+      >
+        <div className="flex h-full flex-col px-2 pb-4 pt-[calc(var(--safe-area-top,0px)+12px)]">
+          <nav className="mt-4 flex-1 space-y-1 overflow-y-auto">
+            {items.map((item) => (
+              <SidebarItem
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+                showLabel={expanded}
+              />
+            ))}
+          </nav>
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={onExpandToggle}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 text-[var(--text)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition hover:bg-white/10 focus-ring"
+              aria-label={expanded ? 'サイドバーを縮める' : 'サイドバーを広げる'}
+              aria-pressed={expanded}
+            >
+              {expanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <div
+        id="mobile-sidebar"
+        ref={mobileRef}
+        className={[
+          'fixed inset-y-0 left-0 z-50 w-64 border-r border-white/10 bg-[var(--panel)] text-[var(--muted)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none md:hidden',
+          mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none',
+        ].join(' ')}
+        role="dialog"
+        aria-modal="true"
+        aria-label="モバイルメニュー"
+      >
+        <div className="flex h-full flex-col px-4 pb-[calc(16px+var(--safe-area-bottom,0px))] pt-[calc(16px+var(--safe-area-top,0px))]">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">メニュー</span>
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[var(--text)] transition hover:bg-white/10 focus-ring"
+              onClick={onMobileClose}
+              aria-label="メニューを閉じる"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <nav className="mt-6 flex-1 space-y-1 overflow-y-auto">
+            {items.map((item) => (
+              <SidebarItem
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+                showLabel
+                onSelect={onMobileClose}
+              />
+            ))}
+          </nav>
+        </div>
       </div>
-    </aside>
+    </>
   );
 }

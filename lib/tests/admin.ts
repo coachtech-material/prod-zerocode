@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { triggerRevalidate } from '@/lib/cache/revalidate';
 import { requireRole } from '@/lib/auth/requireRole';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -8,7 +9,11 @@ import { redirect } from 'next/navigation';
 export async function loadTestWithMeta(id: string) {
   const supabase = createServerSupabaseClient();
   const [{ data: test }, { data: courses }, { data: chapters }] = await Promise.all([
-    supabase.from('tests').select('*').eq('id', id).single(),
+    supabase
+      .from('tests')
+      .select('id,title,course_id,chapter_id,mode,status,spec_yaml')
+      .eq('id', id)
+      .single(),
     supabase
       .from('courses')
       .select('id,title')
@@ -47,6 +52,15 @@ export async function updateTestBasic(formData: FormData) {
   const { error } = await supabase.from('tests').update(update).eq('id', id);
   if (error) return { ok: false, error: error.message } as const;
   revalidatePath(`/admin/test/comfirm/${id}`);
+  revalidatePath('/admin/test/comfirm');
+  await triggerRevalidate({
+    paths: [
+      '/test/comfirm',
+      `/test/comfirm/${id}`,
+      '/admin/test/comfirm',
+      `/admin/test/comfirm/${id}`,
+    ],
+    tags: ['tests'],
+  });
   return redirect(`/admin/test/comfirm/${id}?tab=basic&message=${encodeURIComponent('変更を保存しました')}`);
 }
-

@@ -15,7 +15,7 @@ export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
       type="button"
       onClick={toggleTheme}
       className={[
-        'inline-flex h-10 w-10 items-center justify-center rounded-xl transition focus-ring',
+        'inline-flex h-11 w-11 items-center justify-center rounded-xl transition focus-ring',
         variant === 'secondary'
           ? 'bg-[color:var(--auth-toggle-bg)] text-[color:var(--auth-toggle-foreground)] hover:bg-[color:var(--auth-toggle-hover)]'
           : 'bg-[color:var(--nav-icon-bg)] text-[color:var(--nav-icon-foreground)] hover:bg-[color:var(--nav-icon-hover)]',

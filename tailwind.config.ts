@@ -11,16 +11,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: '#0281CA',
-        'brand-sky': '#7DD1FD',
-        'brand-yellow': '#FFFF55',
-        'brand-blue': '#1E4B9E',
-        surface: '#F3F9FF',
-        'surface-strong': '#E4F4FF',
+        brand: '#1F6FEB',
+        'brand-sky': '#58A6FF',
+        'brand-yellow': '#F2B700',
+        'brand-blue': '#0F2B44',
+        surface: '#0F2B44',
+        'surface-strong': '#103A5D',
       },
       borderRadius: {
         'xl': '0.75rem',
-        '2xl': '1rem',
+        '2xl': '1.5rem',
       },
     },
   },

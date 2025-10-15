@@ -7,26 +7,28 @@ type Props = {
   href: string;
   label: string;
   icon: LucideIcon;
-  collapsed: boolean;
-  showIcon?: boolean;
+  showLabel?: boolean;
+  onSelect?: () => void;
 };
 
-export default function SidebarItem({ href, label, icon: Icon, collapsed, showIcon = true }: Props) {
+export default function SidebarItem({ href, label, icon: Icon, showLabel = true, onSelect }: Props) {
   const pathname = usePathname();
   const active = pathname === href || (href !== '/' && pathname?.startsWith(href));
-  const base = 'group flex items-center rounded-xl text-base text-[color:var(--muted)] transition-colors hover:bg-[color:var(--sidebar-hover)] hover:text-[color:var(--text)]';
-  const layout = collapsed ? 'justify-center h-10 w-full' : 'gap-3 px-3 py-2 h-10';
+  const base =
+    'group relative my-1 flex h-11 items-center rounded-xl text-[15px] text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)] focus-ring';
+  const layout = showLabel ? 'gap-3 px-3' : 'w-11 justify-center';
+
   return (
     <Link
       href={href}
-      className={[base, layout, active ? 'bg-[color:var(--sidebar-active)] text-[color:var(--text)] font-semibold' : ''].join(' ')}
+      className={[base, layout, active ? 'bg-[#103a5d] text-[var(--text)] shadow-[0_8px_24px_rgba(0,0,0,0.35)]' : ''].join(' ')}
       aria-current={active ? 'page' : undefined}
-      title={collapsed ? label : undefined}
+      aria-label={showLabel ? undefined : label}
+      title={showLabel ? undefined : label}
+      onClick={onSelect}
     >
-      {showIcon && <Icon className="shrink-0" size={18} />}
-      {collapsed ? null : (
-        <span className="transition-opacity">{label}</span>
-      )}
+      <Icon className="shrink-0" size={20} />
+      {showLabel && <span className="truncate">{label}</span>}
     </Link>
   );
 }
