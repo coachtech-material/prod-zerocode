@@ -5,9 +5,11 @@ import Link from 'next/link';
 import ToastFromQuery from '@/components/ui/ToastFromQuery';
 import CourseContentList from '@/components/learners/CourseContentList';
 
+export const preferredRegion = ['hnd1'];
+
 export default async function CourseDetailLearner({ params, searchParams }: { params: { courseId: string }, searchParams?: Record<string,string|undefined> }) {
-  await requireRole(['user']);
-  const data = await getCourseTree(params.courseId);
+  const { userId } = await requireRole(['user']);
+  const data = await getCourseTree(params.courseId, userId);
   const course = data?.course as any | undefined;
   const chapters = (data?.chapters as any[]) || [];
   const lessons = (data?.lessons as any[]) || [];

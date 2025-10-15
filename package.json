@@ -44,5 +44,18 @@
     "@tailwindcss/typography": "^0.5.12",
     "yaml": "^2.4.2",
     "typescript": "5.5.4"
+  },
+  "browserslist": {
+    "production": [
+      "last 2 chrome versions",
+      "last 2 firefox versions",
+      "last 2 safari versions",
+      "not dead"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

@@ -8,9 +8,11 @@ import SectionToc from '@/components/learners/SectionToc';
 import LessonHeader from '@/components/learners/LessonHeader';
 import SectionCompletionPanel from '@/components/learners/SectionCompletionPanel';
 
+export const preferredRegion = ['hnd1'];
+
 export default async function SectionView({ params }: { params: { courseId: string; sectionId: string } }) {
-  await requireRole(['user']);
-  const payload = await getSectionPageData(params.courseId, params.sectionId);
+  const { userId } = await requireRole(['user']);
+  const payload = await getSectionPageData(params.courseId, params.sectionId, userId);
   if (!payload) {
     return <div className="surface-card rounded-xl p-4 text-[color:var(--text)]">閲覧できません。</div>;
   }

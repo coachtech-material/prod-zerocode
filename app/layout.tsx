@@ -21,9 +21,21 @@ const themeInitScript = `(() => {
   }
 })();`;
 
+const SUPABASE_ORIGIN = (() => {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    return url ? new URL(url).origin : null;
+  } catch {
+    return null;
+  }
+})();
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
+      <head>
+        {SUPABASE_ORIGIN ? <link rel="preconnect" href={SUPABASE_ORIGIN} crossOrigin="" /> : null}
+      </head>
       <body className="min-h-screen antialiased bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--accent)]/30 text-[14px] leading-[22px]">
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
