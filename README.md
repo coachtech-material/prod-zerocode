@@ -156,3 +156,14 @@
 - `courses/lessons/enrollments/progress` が作成済みで RLS が有効
 - user は publish + enrollment + unlocked 条件を満たすデータのみ取得可能
 - staff/admin はドラフト含む全件参照、作成/更新可能、削除は admin のみ
+
+## RLS パフォーマンス検証ガイド
+- ポリシーの集約後に実行計画を採取し、文単位評価へ切り替わったことを確認します。
+  - `select schemaname, tablename, policyname, permissive, cmd, roles, qual from pg_policies where schemaname = 'public' order by tablename, cmd, policyname;`
+  - `explain analyze select * from public.courses where status = 'published' limit 50;`
+  - `explain analyze select * from public.lessons where status = 'published' and deleted_at is null limit 50;`
+  - `explain analyze select * from public.tests where status = 'published' and deleted_at is null limit 50;`
+- 代表的な更新系も確認します。
+  - `explain analyze update public.progress set updated_at = now() where user_id = (select auth.uid()) and lesson_id = :lesson_id;`
+  - `explain analyze insert into public.enrollments (id, user_id, course_id, status) values (gen_random_uuid(), (select auth.uid()), :course_id, 'active');`
+- 取得した結果はベンチマークログ（例: `docs/benchmarks/rls-<date>.md`）などに保存すると差分追跡が容易です。
