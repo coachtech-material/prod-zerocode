@@ -94,7 +94,7 @@ export default async function SectionView({ params }: { params: { courseId: stri
               <div className="mb-6 lg:mb-0 lg:w-72 xl:w-80 shrink-0 lg:sticky lg:top-24 lg:pl-4 xl:pl-6">
                 <p className="mb-4 hidden text-xs font-semibold uppercase tracking-wide text-brand lg:block">コースメニュー</p>
                 <SectionToc
-                  chapters={chapterList.map((c) => ({ id: c.id, title: c.title, chapter_sort_key: c.chapter_sort_key }))}
+                  chapters={chapterList.map((c) => ({ id: c.id, title: c.title, chapter_sort_key: c.chapter_sort_key ?? 0 }))}
                   sectionsByChapter={sectionsByChapter}
                   courseId={params.courseId}
                   currentSectionId={params.sectionId}
