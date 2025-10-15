@@ -32,7 +32,12 @@ export default async function SectionView({ params }: { params: { courseId: stri
     const arr = sectionsByChapter[lesson.chapter_id] || (sectionsByChapter[lesson.chapter_id] = []);
     const isCompleted = Boolean(progressMap.get(lesson.id)?.is_completed);
     if (isCompleted) completedSectionIds.add(lesson.id);
-    arr.push({ id: lesson.id, title: lesson.title, section_sort_key: lesson.section_sort_key, is_completed: isCompleted });
+    arr.push({
+      id: lesson.id,
+      title: lesson.title,
+      section_sort_key: lesson.section_sort_key ?? 0,
+      is_completed: isCompleted,
+    });
   }
   for (const ch of chapterList) sectionsByChapter[ch.id].sort((a, b) => (a.section_sort_key ?? 0) - (b.section_sort_key ?? 0));
 
