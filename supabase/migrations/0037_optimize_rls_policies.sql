@@ -4,6 +4,9 @@ begin;
 drop policy if exists profiles_self_select on public.profiles;
 drop policy if exists profiles_self_update on public.profiles;
 drop policy if exists profiles_self_insert on public.profiles;
+drop policy if exists profiles_select_self on public.profiles;
+drop policy if exists profiles_update_self on public.profiles;
+drop policy if exists profiles_insert_self on public.profiles;
 
 create policy profiles_select_self on public.profiles
 for select
@@ -24,9 +27,18 @@ with check ( id = (select auth.uid()) );
 -- Courses
 drop policy if exists courses_select_staff_admin on public.courses;
 drop policy if exists courses_select_user on public.courses;
+drop policy if exists courses_select_published_all on public.courses;
 drop policy if exists courses_select_authenticated on public.courses;
 
 create policy courses_select_authenticated on public.courses
+for select
+to authenticated
+using (
+  status = 'published'
+  and deleted_at is null
+);
+
+create policy courses_select_staff_admin on public.courses
 for select
 to authenticated
 using (
@@ -35,16 +47,6 @@ using (
     from public.profiles p
     where p.id = (select auth.uid())
       and p.role in ('staff','admin')
-  )
-  or (
-    status = 'published'
-    and exists (
-      select 1
-      from public.enrollments e
-      where e.user_id = (select auth.uid())
-        and e.course_id = public.courses.id
-        and e.status = 'active'
-    )
   )
 );
 
@@ -173,15 +175,19 @@ create policy lessons_select_authenticated on public.lessons
 for select
 to authenticated
 using (
+  status = 'published'
+  and public.lessons.deleted_at is null
+);
+
+create policy lessons_select_staff_admin on public.lessons
+for select
+to authenticated
+using (
   exists (
     select 1
     from public.profiles p
     where p.id = (select auth.uid())
       and p.role in ('staff','admin')
-  )
-  or (
-    status = 'published'
-    and public.lessons.deleted_at is null
   )
 );
 
@@ -252,6 +258,7 @@ using (
 
 drop policy if exists enrollments_insert_self on public.enrollments;
 drop policy if exists enrollments_insert_staff_admin on public.enrollments;
+drop policy if exists enrollments_insert_authenticated on public.enrollments;
 
 create policy enrollments_insert_authenticated on public.enrollments
 for insert
@@ -268,6 +275,7 @@ with check (
 
 drop policy if exists enrollments_update_self on public.enrollments;
 drop policy if exists enrollments_update_staff_admin on public.enrollments;
+drop policy if exists enrollments_update_authenticated on public.enrollments;
 
 create policy enrollments_update_authenticated on public.enrollments
 for update
@@ -294,6 +302,7 @@ with check (
 -- Progress
 drop policy if exists progress_select_self on public.progress;
 drop policy if exists progress_select_staff_admin on public.progress;
+drop policy if exists progress_select_authenticated on public.progress;
 
 create policy progress_select_authenticated on public.progress
 for select
@@ -310,6 +319,7 @@ using (
 
 drop policy if exists progress_insert_self on public.progress;
 drop policy if exists progress_insert_staff_admin on public.progress;
+drop policy if exists progress_insert_authenticated on public.progress;
 
 create policy progress_insert_authenticated on public.progress
 for insert
@@ -326,6 +336,7 @@ with check (
 
 drop policy if exists progress_update_self on public.progress;
 drop policy if exists progress_update_staff_admin on public.progress;
+drop policy if exists progress_update_authenticated on public.progress;
 
 create policy progress_update_authenticated on public.progress
 for update
@@ -358,15 +369,19 @@ create policy tests_select_authenticated on public.tests
 for select
 to authenticated
 using (
+  status = 'published'
+  and deleted_at is null
+);
+
+create policy tests_select_staff_admin on public.tests
+for select
+to authenticated
+using (
   exists (
     select 1
     from public.profiles p
     where p.id = (select auth.uid())
       and p.role in ('staff','admin')
-  )
-  or (
-    status = 'published'
-    and deleted_at is null
   )
 );
 
@@ -480,35 +495,71 @@ using (
 
 -- Categories (learning reports)
 drop policy if exists categories_select_own on public.categories;
-create policy categories_select_own on public.categories
+drop policy if exists categories_modify_own on public.categories;
+drop policy if exists categories_select_authenticated on public.categories;
+drop policy if exists categories_insert_authenticated on public.categories;
+drop policy if exists categories_update_authenticated on public.categories;
+drop policy if exists categories_delete_authenticated on public.categories;
+
+create policy categories_select_authenticated on public.categories
 for select
 to authenticated
 using ( user_id = (select auth.uid()) );
 
-drop policy if exists categories_modify_own on public.categories;
-create policy categories_modify_own on public.categories
-for all
+create policy categories_insert_authenticated on public.categories
+for insert
+to authenticated
+with check ( user_id = (select auth.uid()) );
+
+create policy categories_update_authenticated on public.categories
+for update
 to authenticated
 using ( user_id = (select auth.uid()) )
 with check ( user_id = (select auth.uid()) );
+
+create policy categories_delete_authenticated on public.categories
+for delete
+to authenticated
+using ( user_id = (select auth.uid()) );
 
 -- Daily reports
 drop policy if exists daily_reports_select_own on public.daily_reports;
-create policy daily_reports_select_own on public.daily_reports
+drop policy if exists daily_reports_modify_own on public.daily_reports;
+drop policy if exists daily_reports_select_authenticated on public.daily_reports;
+drop policy if exists daily_reports_insert_authenticated on public.daily_reports;
+drop policy if exists daily_reports_update_authenticated on public.daily_reports;
+drop policy if exists daily_reports_delete_authenticated on public.daily_reports;
+
+create policy daily_reports_select_authenticated on public.daily_reports
 for select
 to authenticated
 using ( user_id = (select auth.uid()) );
 
-drop policy if exists daily_reports_modify_own on public.daily_reports;
-create policy daily_reports_modify_own on public.daily_reports
-for all
+create policy daily_reports_insert_authenticated on public.daily_reports
+for insert
+to authenticated
+with check ( user_id = (select auth.uid()) );
+
+create policy daily_reports_update_authenticated on public.daily_reports
+for update
 to authenticated
 using ( user_id = (select auth.uid()) )
 with check ( user_id = (select auth.uid()) );
 
+create policy daily_reports_delete_authenticated on public.daily_reports
+for delete
+to authenticated
+using ( user_id = (select auth.uid()) );
+
 -- Daily report items
 drop policy if exists daily_report_items_select_own on public.daily_report_items;
-create policy daily_report_items_select_own on public.daily_report_items
+drop policy if exists daily_report_items_modify_own on public.daily_report_items;
+drop policy if exists daily_report_items_select_authenticated on public.daily_report_items;
+drop policy if exists daily_report_items_insert_authenticated on public.daily_report_items;
+drop policy if exists daily_report_items_update_authenticated on public.daily_report_items;
+drop policy if exists daily_report_items_delete_authenticated on public.daily_report_items;
+
+create policy daily_report_items_select_authenticated on public.daily_report_items
 for select
 to authenticated
 using (
@@ -520,9 +571,20 @@ using (
   )
 );
 
-drop policy if exists daily_report_items_modify_own on public.daily_report_items;
-create policy daily_report_items_modify_own on public.daily_report_items
-for all
+create policy daily_report_items_insert_authenticated on public.daily_report_items
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.daily_reports dr
+    where dr.id = public.daily_report_items.daily_report_id
+      and dr.user_id = (select auth.uid())
+  )
+);
+
+create policy daily_report_items_update_authenticated on public.daily_report_items
+for update
 to authenticated
 using (
   exists (
@@ -541,18 +603,45 @@ with check (
   )
 );
 
+create policy daily_report_items_delete_authenticated on public.daily_report_items
+for delete
+to authenticated
+using (
+  exists (
+    select 1
+    from public.daily_reports dr
+    where dr.id = public.daily_report_items.daily_report_id
+      and dr.user_id = (select auth.uid())
+  )
+);
+
 -- Monthly goals
 drop policy if exists monthly_goals_select_own on public.monthly_goals;
-create policy monthly_goals_select_own on public.monthly_goals
+drop policy if exists monthly_goals_modify_own on public.monthly_goals;
+drop policy if exists monthly_goals_select_authenticated on public.monthly_goals;
+drop policy if exists monthly_goals_insert_authenticated on public.monthly_goals;
+drop policy if exists monthly_goals_update_authenticated on public.monthly_goals;
+drop policy if exists monthly_goals_delete_authenticated on public.monthly_goals;
+
+create policy monthly_goals_select_authenticated on public.monthly_goals
 for select
 to authenticated
 using ( user_id = (select auth.uid()) );
 
-drop policy if exists monthly_goals_modify_own on public.monthly_goals;
-create policy monthly_goals_modify_own on public.monthly_goals
-for all
+create policy monthly_goals_insert_authenticated on public.monthly_goals
+for insert
+to authenticated
+with check ( user_id = (select auth.uid()) );
+
+create policy monthly_goals_update_authenticated on public.monthly_goals
+for update
 to authenticated
 using ( user_id = (select auth.uid()) )
 with check ( user_id = (select auth.uid()) );
+
+create policy monthly_goals_delete_authenticated on public.monthly_goals
+for delete
+to authenticated
+using ( user_id = (select auth.uid()) );
 
 commit;
