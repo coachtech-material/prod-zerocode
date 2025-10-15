@@ -11,7 +11,7 @@ import Logo from '@/icon/zerocode-logo.svg';
 type HeaderProps = {
   mobileSidebarOpen: boolean;
   onMobileSidebarToggle: () => void;
-  sidebarToggleRef: React.RefObject<HTMLButtonElement | null>;
+  sidebarToggleRef: React.RefObject<HTMLButtonElement>;
 };
 
 type MenuItem = {

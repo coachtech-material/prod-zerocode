@@ -9,7 +9,7 @@ export default function LayoutShell({ role, children }: { role: 'user' | 'staff'
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarMobileRef = useRef<HTMLDivElement | null>(null);
-  const sidebarToggleRef = useRef<HTMLButtonElement | null>(null);
+  const sidebarToggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
