@@ -44,7 +44,7 @@ export default function Sidebar({ role, collapsed, onToggle }: Props) {
   return (
     <aside
       className={[
-        'fixed left-0 top-16 bottom-0 z-40 border-r border-[#163874] bg-[#1E4B9E] text-white transition-[width] duration-300 ease-in-out shadow-[0_12px_30px_rgba(30,75,158,0.35)]',
+        'fixed left-0 top-16 bottom-0 z-40 border-r border-[color:var(--sidebar-border)] bg-[color:var(--sidebar-bg)] text-[#C3C7CC] transition-[width] duration-300 ease-in-out shadow-[var(--shadow-1)]',
         collapsed ? 'w-16' : 'w-60',
       ].join(' ')}
     >
@@ -64,7 +64,7 @@ export default function Sidebar({ role, collapsed, onToggle }: Props) {
         <button
           onClick={onToggle}
           className={[
-            'mb-1 flex h-10 w-full items-center rounded-xl bg-brand-sky/20 hover:bg-brand-sky/40 text-white focus-ring',
+            'mb-1 flex h-10 w-full items-center rounded-xl bg-[color:var(--nav-icon-bg)] text-[color:var(--nav-icon-foreground)] hover:bg-[color:var(--nav-icon-hover)] focus-ring',
             collapsed ? 'justify-center' : 'justify-center gap-2 px-3',
           ].join(' ')}
           aria-label={collapsed ? 'サイドバーを開く' : 'サイドバーを閉じる'}

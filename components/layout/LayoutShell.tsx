@@ -24,7 +24,7 @@ export default function LayoutShell({ role, children }: { role: 'user' | 'staff'
       <main
         data-scroll-container="layout-shell-main"
         className={[
-          'fixed right-0 bottom-0 top-16 overflow-y-auto p-6 bg-[color:var(--color-content-background)] text-[color:var(--color-text)] backdrop-blur-sm border-l border-brand-sky/20',
+          'fixed right-0 bottom-0 top-16 overflow-y-auto p-6 bg-[color:var(--color-content-background)] text-[color:var(--text)] backdrop-blur-sm border-l border-[color:var(--line)]',
           collapsed ? 'left-16' : 'left-60',
         ].join(' ')}
       >

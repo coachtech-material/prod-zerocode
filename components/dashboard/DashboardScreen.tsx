@@ -128,12 +128,12 @@ function Calendar({
   );
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)] p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <button
           type="button"
           onClick={() => onChangeMonth(-1)}
-          className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-full p-1 text-[color:var(--muted)] transition hover:bg-slate-100 hover:text-slate-700"
           aria-label="前の月"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -147,13 +147,13 @@ function Calendar({
         <button
           type="button"
           onClick={() => onChangeMonth(1)}
-          className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-full p-1 text-[color:var(--muted)] transition hover:bg-slate-100 hover:text-slate-700"
           aria-label="次の月"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-500">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-[color:var(--muted)]">
         {japaneseWeekdays.map((weekday) => (
           <div key={weekday} className="py-2">
             {weekday}
@@ -229,9 +229,9 @@ function Calendar({
 
 function SummaryBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-      <span className="text-xs font-medium text-slate-500">{label}</span>
-      <span className="mt-1 text-base font-semibold text-slate-800">{value}</span>
+    <div className="flex flex-col rounded-xl bg-[color:var(--surface-1)] px-4 py-3 text-sm text-[color:var(--muted)]">
+      <span className="text-xs font-medium text-[color:var(--muted)]">{label}</span>
+      <span className="mt-1 text-base font-semibold text-[color:var(--text)]">{value}</span>
     </div>
   );
 }
@@ -252,18 +252,18 @@ function DailyReportPanel({
   onDelete: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="surface-card rounded-2xl p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-slate-800">
+          <h2 className="text-xl font-semibold text-[color:var(--text)]">
             {formatDisplayDate(selectedDate)} の学習記録
           </h2>
-          <p className="text-sm text-slate-500">学習の記録と感想を残しましょう。</p>
+          <p className="text-sm text-[color:var(--muted)]">学習の記録と感想を残しましょう。</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="mt-10 flex items-center justify-center text-slate-500">
+        <div className="mt-10 flex items-center justify-center text-[color:var(--muted)]">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" /> 読み込み中…
         </div>
       ) : detail ? (
@@ -272,7 +272,7 @@ function DailyReportPanel({
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:border-brand hover:text-brand"
+              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--line)] px-3 py-1.5 text-sm font-medium text-[color:var(--muted)] transition hover:border-brand hover:text-brand"
             >
               <Edit3 className="h-4 w-4" /> 編集
             </button>
@@ -285,15 +285,15 @@ function DailyReportPanel({
             </button>
           </div>
           <div className="grid gap-4">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold text-slate-500">学習時間</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-800">
+            <div className="surface-card px-4 py-4">
+              <p className="text-xs font-semibold text-[color:var(--muted)]">学習時間</p>
+              <p className="mt-2 text-2xl font-semibold text-[color:var(--text)]">
                 {formatDuration(detail.totalMinutes)}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold text-slate-500">完走（一言メモ）</p>
-              <p className="mt-2 text-sm text-slate-600">
+            <div className="surface-card px-4 py-4">
+              <p className="text-xs font-semibold text-[color:var(--muted)]">完走（一言メモ）</p>
+              <p className="mt-2 text-sm text-[color:var(--muted)]">
                 {detail.reflectionText && detail.reflectionText.trim().length
                   ? detail.reflectionText
                   : '記録がありません。'}
@@ -303,13 +303,13 @@ function DailyReportPanel({
         </div>
       ) : (
         <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-brand/40 bg-brand/5 px-6 py-12 text-center">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[color:var(--muted)]">
             まだ {formatDisplayDate(selectedDate)} の学習記録はありません。
           </p>
           <button
             type="button"
             onClick={onCreate}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90"
+            className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--brand-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90"
           >
             <Plus className="h-4 w-4" /> 学習を記録する
           </button>
@@ -402,13 +402,13 @@ function ProjectTimeline({ startDate, endDate }: { startDate: Date; endDate: Dat
                         'relative z-10 h-4 w-4 rounded-full border-2 transition-all',
                         completed
                           ? 'border-brand bg-brand shadow-[0_0_0_3px_rgba(65,120,255,0.25)]'
-                          : 'border-slate-300 bg-white shadow-[0_0_0_2px_rgba(148,163,184,0.25)]',
+                          : 'border-slate-300 bg-[color:var(--surface-1)] shadow-[0_0_0_2px_rgba(148,163,184,0.25)]',
                         isCurrent ? 'scale-110 shadow-[0_0_0_5px_rgba(65,120,255,0.28)]' : '',
                       ].join(' ')}
                       aria-hidden="true"
                     />
                   </div>
-                  <span className="mt-2 text-[11px] font-medium text-slate-600">{milestone.label}</span>
+                  <span className="mt-2 text-[11px] font-medium text-[color:var(--muted)]">{milestone.label}</span>
                 </div>
               );
             })}
@@ -477,27 +477,27 @@ function MonthlyGoalCard({
   const renderGoalCard = () => {
     if (!goal) return null;
     return (
-      <div className="relative flex h-full w-full max-w-full flex-col rounded-2xl border border-slate-100 bg-slate-50/60 px-6 py-4 text-sm text-slate-700 shadow-inner lg:h-full lg:w-full lg:self-stretch">
+      <div className="relative flex h-full w-full max-w-full flex-col rounded-2xl border border-slate-100 bg-[color:var(--surface-1)]/60 px-6 py-4 text-sm text-slate-700 shadow-inner lg:h-full lg:w-full lg:self-stretch">
         <div className="flex flex-1 flex-col">
           <div className="flex items-start justify-between gap-4">
             <p className="flex-1 leading-relaxed text-sm">{goal.text}</p>
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand hover:text-brand"
+              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--line)] px-3 py-1.5 text-xs font-semibold text-[color:var(--muted)] transition hover:border-brand hover:text-brand"
             >
               <Edit3 className="h-3.5 w-3.5" /> 編集
             </button>
           </div>
           {goal.targetMinutes ? (
-            <div className="mt-3 space-y-2 rounded-xl bg-white/60 p-3">
-              <div className="flex items-center justify-between text-xs text-slate-500">
+            <div className="surface-card mt-3 space-y-2 p-3">
+              <div className="flex items-center justify-between text-xs text-[color:var(--muted)]">
                 <span>
                   進捗: {formatDuration(goalState.achievedMinutes)} / {formatDuration(goal.targetMinutes)}
                 </span>
                 <span>{progress}%</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-200">
+              <div className="h-2 w-full rounded-full bg-[color:var(--line)]/60">
                 <div className="h-2 rounded-full bg-brand transition-all" style={{ width: `${progress}%` }} />
               </div>
             </div>
@@ -508,33 +508,33 @@ function MonthlyGoalCard({
   };
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white px-6 pt-3 pb-1 shadow-sm">
+    <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--surface-1)] px-6 pt-3 pb-1 shadow-sm">
       <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold text-slate-800">zerocode受講期間の進捗と目標</h3>
+            <h3 className="text-lg font-semibold text-[color:var(--text)]">zerocode受講期間の進捗と目標</h3>
             {goal ? null : renderCreateButton()}
           </div>
         {(dayStats || goal) && (
           <div className="flex flex-col gap-1 lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:items-stretch lg:gap-3">
             {dayStats ? (
-              <div className="flex w-full flex-col items-stretch gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600 lg:w-auto lg:h-full lg:flex-row lg:items-stretch lg:gap-1 lg:self-stretch">
+              <div className="surface-card flex w-full flex-col items-stretch gap-2 rounded-2xl px-2 py-1 text-xs text-[color:var(--muted)] lg:w-auto lg:h-full lg:flex-row lg:items-stretch lg:gap-1 lg:self-stretch">
                 <div className="flex flex-none flex-col gap-1">
-                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-white/80 px-3 py-2 text-center shadow-inner">
-                    <p className="text-[11px] text-slate-500">残受講期間</p>
+                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-[color:var(--surface-1)]/80 px-3 py-2 text-center shadow-inner">
+                    <p className="text-[11px] text-[color:var(--muted)]">残受講期間</p>
                     <p className="mt-1 text-sm font-semibold text-slate-700">{dayStats.remainingDays}日</p>
                   </div>
-                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-white/80 px-3 py-2 text-center shadow-inner">
-                    <p className="text-[11px] text-slate-500">進捗</p>
+                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-[color:var(--surface-1)]/80 px-3 py-2 text-center shadow-inner">
+                    <p className="text-[11px] text-[color:var(--muted)]">進捗</p>
                     <p className="mt-1 text-sm font-semibold text-slate-700">{dayStats.percent}%</p>
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-2 lg:pl-1">
-                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-white/80 px-3 py-2 text-center shadow-inner">
-                    <p className="text-[11px] text-slate-500">受講開始日</p>
+                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-[color:var(--surface-1)]/80 px-3 py-2 text-center shadow-inner">
+                    <p className="text-[11px] text-[color:var(--muted)]">受講開始日</p>
                     <p className="mt-1 text-sm font-semibold text-slate-700">{dayStats.startLabel}</p>
                   </div>
-                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-white/80 px-3 py-2 text-center shadow-inner">
-                    <p className="text-[11px] text-slate-500">受講終了日</p>
+                  <div className="flex min-h-[72px] min-w-[140px] flex-col items-center justify-center rounded-xl bg-[color:var(--surface-1)]/80 px-3 py-2 text-center shadow-inner">
+                    <p className="text-[11px] text-[color:var(--muted)]">受講終了日</p>
                     <p className="mt-1 text-sm font-semibold text-slate-700">{dayStats.endLabel}</p>
                   </div>
                 </div>
@@ -551,11 +551,11 @@ function MonthlyGoalCard({
 
 function MonthlySummaryCard({ summary, onViewAnalysis }: { summary: MonthlySummary; onViewAnalysis: () => void }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)] p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-slate-800">月間分析レポート</h3>
-          <p className="text-xs text-slate-500">今月の学習状況を確認しましょう。</p>
+          <h3 className="text-base font-semibold text-[color:var(--text)]">月間分析レポート</h3>
+          <p className="text-xs text-[color:var(--muted)]">今月の学習状況を確認しましょう。</p>
         </div>
         <button
           type="button"
@@ -643,19 +643,19 @@ function DailyReportModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--overlay)] px-4 py-6">
+      <div className="surface-menu w-full max-w-md overflow-hidden rounded-2xl">
+        <div className="flex items-center justify-between border-b border-[color:var(--line)] px-6 py-4">
           <div>
-            <p className="text-xs font-medium text-slate-500">{formatDisplayDate(date)}</p>
-            <h2 className="text-lg font-semibold text-slate-800">
+            <p className="text-xs font-medium text-[color:var(--muted)]">{formatDisplayDate(date)}</p>
+            <h2 className="text-lg font-semibold text-[color:var(--text)]">
               {mode === 'edit' ? '日報を編集' : '日報を作成'}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-slate-500 hover:text-slate-700"
+            className="text-sm text-[color:var(--muted)] hover:text-slate-700"
           >
             閉じる
           </button>
@@ -663,7 +663,7 @@ function DailyReportModal({
         <div className="space-y-6 px-6 py-6">
           <div>
             <label className="text-sm font-medium text-slate-700">学習時間</label>
-            <p className="mt-1 text-xs text-slate-500">その日に学習した合計時間を入力してください。</p>
+            <p className="mt-1 text-xs text-[color:var(--muted)]">その日に学習した合計時間を入力してください。</p>
             <div className="mt-3 flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <input
@@ -673,9 +673,9 @@ function DailyReportModal({
                   onChange={(event) =>
                     setHours(Math.max(0, Number(event.target.value) || 0))
                   }
-                  className="w-24 rounded-lg border border-slate-200 px-2 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                  className="w-24 rounded-lg border border-[color:var(--line)] px-2 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                 />
-                <span className="text-xs text-slate-500">時間</span>
+                <span className="text-xs text-[color:var(--muted)]">時間</span>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -688,35 +688,35 @@ function DailyReportModal({
                       Math.min(59, Math.max(0, Number(event.target.value) || 0)),
                     )
                   }
-                  className="w-24 rounded-lg border border-slate-200 px-2 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                  className="w-24 rounded-lg border border-[color:var(--line)] px-2 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                 />
-                <span className="text-xs text-slate-500">分</span>
+                <span className="text-xs text-[color:var(--muted)]">分</span>
               </div>
             </div>
           </div>
           <div>
             <label className="text-sm font-medium text-slate-700">完走（一言メモ）</label>
-            <p className="mt-1 text-xs text-slate-500">その日の学習を振り返るひとことを残しましょう。</p>
+            <p className="mt-1 text-xs text-[color:var(--muted)]">その日の学習を振り返るひとことを残しましょう。</p>
             <textarea
               value={memo}
               onChange={(event) => setMemo(event.target.value)}
               rows={3}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              className="mt-2 w-full rounded-xl border border-[color:var(--line)] px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
               placeholder="例：アウトプット中心で進められた"
             />
             <div className="mt-1 text-right text-xs text-slate-400">{memo.length}文字</div>
           </div>
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <div className="rounded-lg border border-[color:var(--danger)]/40 bg-[color:var(--danger)]/15 px-3 py-2 text-sm text-[color:var(--danger)]">
               {error}
             </div>
           )}
         </div>
-        <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--line)] bg-[color:var(--surface-1)] px-6 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:border-slate-300"
+            className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--muted)] hover:bg-[color:var(--brand)]/10"
             disabled={loading}
           >
             キャンセル
@@ -725,7 +725,7 @@ function DailyReportModal({
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />} 登録する
           </button>
@@ -780,27 +780,27 @@ function GoalModal({ open, monthKey, goalState, loading, onClose, onSubmit }: Go
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <p className="text-xs font-medium text-slate-500">{monthKey}</p>
-          <h2 className="text-lg font-semibold text-slate-800">月間目標を設定</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--overlay)] px-4 py-6">
+      <div className="surface-menu w-full max-w-lg overflow-hidden rounded-2xl">
+        <div className="border-b border-[color:var(--line)] px-6 py-4">
+          <p className="text-xs font-medium text-[color:var(--muted)]">{monthKey}</p>
+          <h2 className="text-lg font-semibold text-[color:var(--text)]">月間目標を設定</h2>
         </div>
         <div className="space-y-4 px-6 py-6">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-[color:var(--text)]">
               目標内容
             </label>
             <textarea
               value={text}
               onChange={(event) => setText(event.target.value)}
               rows={4}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-1)] px-3 py-2 text-sm text-[color:var(--text)] shadow-[var(--shadow-1)] focus-ring"
               placeholder="例：毎日2時間Laravelの実装練習を行う"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-[color:var(--text)]">
               目標時間（任意）
             </label>
             <div className="flex items-center gap-3">
@@ -809,31 +809,31 @@ function GoalModal({ open, monthKey, goalState, loading, onClose, onSubmit }: Go
                 min={0}
                 value={targetHours}
                 onChange={(event) => setTargetHours(Number(event.target.value))}
-                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-1)] px-2 py-2 text-sm text-[color:var(--text)] shadow-[var(--shadow-1)] focus-ring"
               />
-              <span className="text-xs text-slate-500">時間</span>
+              <span className="text-xs text-[color:var(--muted)]">時間</span>
               <input
                 type="number"
                 min={0}
                 max={59}
                 value={targetMinutes}
                 onChange={(event) => setTargetMinutes(Number(event.target.value))}
-                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-1)] px-2 py-2 text-sm text-[color:var(--text)] shadow-[var(--shadow-1)] focus-ring"
               />
-              <span className="text-xs text-slate-500">分</span>
+              <span className="text-xs text-[color:var(--muted)]">分</span>
             </div>
           </div>
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <div className="rounded-lg border border-[color:var(--danger)]/40 bg-[color:var(--danger)]/15 px-3 py-2 text-sm text-[color:var(--danger)]">
               {error}
             </div>
           )}
         </div>
-        <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--line)] bg-[color:var(--surface-1)] px-6 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:border-slate-300"
+            className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--muted)] hover:bg-[color:var(--brand)]/10"
             disabled={loading}
           >
             キャンセル
@@ -842,7 +842,7 @@ function GoalModal({ open, monthKey, goalState, loading, onClose, onSubmit }: Go
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />} 保存する
           </button>
@@ -1170,8 +1170,8 @@ export default function DashboardScreen() {
   return (
     <div className="space-y-6 px-6 py-8">
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-slate-800">ダッシュボード</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-2xl font-semibold text-[color:var(--text)]">ダッシュボード</h1>
+        <p className="text-sm text-[color:var(--muted)]">
           日報を記録し、目標と学習状況を振り返りましょう。
         </p>
       </header>

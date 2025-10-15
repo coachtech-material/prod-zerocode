@@ -28,24 +28,24 @@ export default async function CourseDetailLearner({ params, searchParams }: { pa
     <div className="space-y-6">
       <ToastFromQuery />
       {/* Breadcrumbs */}
-      <nav aria-label="breadcrumbs" className="text-sm text-slate-500">
+      <nav aria-label="breadcrumbs" className="text-sm text-[color:var(--muted)]">
         <ol className="flex items-center gap-2">
           <li>
-            <Link href="/courses" className="underline decoration-white/20 hover:decoration-white focus-ring rounded">
+            <Link href="/courses" className="rounded underline decoration-transparent transition hover:decoration-[color:var(--brand)] focus-ring">
               コース一覧
             </Link>
           </li>
           <li aria-hidden>›</li>
-          <li aria-current="page" className="text-slate-700 truncate max-w-[60ch]">
+          <li aria-current="page" className="max-w-[60ch] truncate text-[color:var(--text)]">
             {course?.title || 'コース'}
           </li>
         </ol>
       </nav>
-      <h1 className="text-2xl font-semibold">{course?.title || 'コース'}</h1>
+      <h1 className="text-2xl font-semibold text-[color:var(--text)]">{course?.title || 'コース'}</h1>
       
       {/* Overview video between title and description */}
       {course?.overview_video_url && (
-        <div className="mx-auto w-full max-w-3xl rounded-2xl border border-brand-sky/20 bg-white p-2">
+        <div className="mx-auto w-full max-w-3xl rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)] p-2 shadow-[var(--shadow-1)]">
           <div className="aspect-video overflow-hidden rounded-xl">
             {(() => {
               try {
@@ -86,12 +86,12 @@ export default async function CourseDetailLearner({ params, searchParams }: { pa
         </div>
       )}
       {course && (
-        <article className="prose max-w-none dark:prose" dangerouslySetInnerHTML={{ __html: html }} />
+        <article className="prose max-w-none text-[color:var(--text)]" dangerouslySetInnerHTML={{ __html: html }} />
       )}
 
-      <div className="rounded-2xl border border-brand-sky/20 bg-white">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h2 className="font-medium">コンテンツ</h2>
+      <div className="surface-card rounded-2xl">
+        <div className="flex items-center justify-between border-b border-[color:var(--line)] px-4 py-3">
+          <h2 className="font-medium text-[color:var(--text)]">コンテンツ</h2>
         </div>
         <CourseContentList
           chapters={chapters.map((c:any)=>({ id: c.id, title: c.title, chapter_sort_key: c.chapter_sort_key }))}

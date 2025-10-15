@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react';
 import { Stepper, StepperMobile, REGISTER_STEPS } from '@/components/register/Stepper';
 import { readOnboardingState } from '@/lib/onboarding/state';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export default function RegisterLayout({ children }: { children: ReactNode }) {
   const state = readOnboardingState();
   const totalSteps = REGISTER_STEPS.length;
   const step = Math.min(Math.max(state.step ?? 1, 1), totalSteps + 1);
   return (
-    <div className="flex min-h-screen w-full flex-col bg-[color:var(--color-surface-strong)] lg:flex-row">
+    <div className="relative flex min-h-screen w-full flex-col bg-[color:var(--color-surface-strong)] lg:flex-row">
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle variant="secondary" />
+      </div>
       <aside className="hidden min-h-screen flex-none lg:flex lg:w-[35%]">
         <Stepper step={step} />
       </aside>

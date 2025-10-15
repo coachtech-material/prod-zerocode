@@ -90,18 +90,18 @@ export default function SectionCompletionPanel({
             type="button"
             onClick={handleMarkComplete}
             disabled={isPending}
-            className="inline-flex items-center justify-center rounded-2xl bg-brand px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center justify-center rounded-2xl bg-[color:var(--brand-strong)] px-6 py-3 text-base font-semibold text-white shadow-[var(--shadow-1)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isPending ? '処理中…' : 'ページを読了しました！'}
           </button>
-          {error ? <p className="text-sm text-red-500">{error}</p> : null}
+          {error ? <p className="text-sm text-[color:var(--danger)]">{error}</p> : null}
         </div>
       ) : (
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {prev ? (
             <Link
               href={`/courses/${courseId}/sections/${prev.id}`}
-              className="rounded-2xl bg-brand-yellow px-4 py-2.5 text-base text-brand font-medium focus-ring hover:bg-brand-yellow/90"
+              className="rounded-2xl bg-[color:var(--brand)]/18 px-4 py-2.5 text-base font-medium text-[color:var(--text)] focus-ring hover:bg-[color:var(--brand)]/24"
             >
               ← 前へ: {prev.title}
             </Link>
@@ -111,7 +111,7 @@ export default function SectionCompletionPanel({
           {next ? (
             <Link
               href={`/courses/${courseId}/sections/${next.id}`}
-              className="rounded-2xl bg-brand-yellow px-4 py-2.5 text-base text-brand font-semibold focus-ring hover:bg-brand-yellow/90"
+              className="rounded-2xl bg-[color:var(--brand)]/24 px-4 py-2.5 text-base font-semibold text-[color:var(--text)] focus-ring hover:bg-[color:var(--brand)]/32"
             >
               次へ: {next.title} →
             </Link>
@@ -123,13 +123,13 @@ export default function SectionCompletionPanel({
 
       {showModal && mounted
         ? createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
-            <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--overlay)] px-4">
+            <div className="surface-menu relative w-full max-w-md rounded-2xl p-6">
               <button
                 type="button"
                 onClick={modalStatus === 'loading' ? undefined : closeModal}
                 disabled={modalStatus === 'loading'}
-                className="absolute right-3 top-3 text-slate-400 transition hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                className="absolute right-3 top-3 text-[color:var(--muted)] transition hover:text-[color:var(--text)] disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="閉じる"
                 >
                   ×
@@ -137,14 +137,14 @@ export default function SectionCompletionPanel({
                 <div className="space-y-4">
                   {modalStatus === 'loading' ? (
                     <div className="space-y-3 text-center">
-                      <h3 className="text-lg font-semibold text-slate-900">完了処理中です…</h3>
-                      <p className="text-sm text-slate-600">このままお待ちください。</p>
+                      <h3 className="text-lg font-semibold text-[color:var(--text)]">完了処理中です…</h3>
+                      <p className="text-sm text-[color:var(--muted)]">このままお待ちください。</p>
                     </div>
                   ) : (
                     <>
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900">お疲れ様でした 🎉</h3>
-                        <p className="mt-2 text-sm text-slate-600">
+                        <h3 className="text-lg font-semibold text-[color:var(--text)]">お疲れ様でした 🎉</h3>
+                        <p className="mt-2 text-sm text-[color:var(--muted)]">
                           この教材を読了しました。次のステップに進むか、前の教材を復習しましょう。
                         </p>
                       </div>
@@ -152,7 +152,7 @@ export default function SectionCompletionPanel({
                         {prev ? (
                           <Link
                             href={`/courses/${courseId}/sections/${prev.id}`}
-                            className="rounded-xl border border-brand/20 px-4 py-2 text-sm font-medium text-brand transition hover:border-brand hover:bg-brand/10"
+                            className="rounded-xl border border-[color:var(--line)] px-4 py-2 text-sm font-medium text-[color:var(--text)] transition hover:bg-[color:var(--brand)]/15"
                             onClick={closeModal}
                           >
                             ← 前の教材に戻る
@@ -163,7 +163,7 @@ export default function SectionCompletionPanel({
                         {next ? (
                           <Link
                             href={`/courses/${courseId}/sections/${next.id}`}
-                            className="rounded-xl bg-brand-yellow px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand-yellow/90"
+                            className="rounded-xl bg-[color:var(--brand)]/24 px-4 py-2 text-sm font-semibold text-[color:var(--text)] transition hover:bg-[color:var(--brand)]/30"
                             onClick={closeModal}
                           >
                             次の教材に進む →
@@ -175,7 +175,7 @@ export default function SectionCompletionPanel({
                       <button
                         type="button"
                         onClick={closeModal}
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:border-slate-300"
+                        className="w-full rounded-xl border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--muted)] transition hover:bg-[color:var(--brand)]/12"
                       >
                         今は閉じる
                       </button>

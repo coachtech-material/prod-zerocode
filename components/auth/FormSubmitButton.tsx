@@ -11,9 +11,9 @@ export default function FormSubmitButton({ children, disabled }: PropsWithChildr
       type="submit"
       disabled={isDisabled}
       className={[
-        'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--color-primary-button)] px-4 py-3 text-sm font-semibold text-white transition',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand',
-        isDisabled ? 'opacity-60' : 'hover:opacity-90',
+        'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--brand-strong)] px-4 py-3 text-sm font-semibold text-white transition',
+        'focus-ring hover:brightness-105',
+        isDisabled ? 'opacity-60' : '',
       ].join(' ')}
     >
       {pending && (

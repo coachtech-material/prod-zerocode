@@ -13,14 +13,14 @@ export default function PasswordLoginForm({ action, submitLabel = 'ログイン'
       {errorMessage && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-xl border border-[color:var(--danger)]/40 bg-[color:var(--danger)]/15 px-4 py-3 text-sm text-[color:var(--danger)]"
         >
           {errorMessage}
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="password-login-email" className="block text-sm font-medium text-[color:var(--color-text)]">
+        <label htmlFor="password-login-email" className="block text-sm font-medium text-[color:var(--text)]">
           メールアドレス <span className="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
@@ -31,12 +31,12 @@ export default function PasswordLoginForm({ action, submitLabel = 'ログイン'
           aria-required="true"
           autoComplete="username"
           placeholder="メールアドレスを入力"
-          className="w-full rounded-2xl border border-[color:var(--color-outline)] bg-white px-4 py-3 text-[color:var(--color-text)] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:border-brand"
+          className="w-full rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)] px-4 py-3 text-[color:var(--text)] shadow-[var(--shadow-1)] focus-ring"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password-login-password" className="block text-sm font-medium text-[color:var(--color-text)]">
+        <label htmlFor="password-login-password" className="block text-sm font-medium text-[color:var(--text)]">
           パスワード <span className="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
@@ -47,7 +47,7 @@ export default function PasswordLoginForm({ action, submitLabel = 'ログイン'
           aria-required="true"
           autoComplete="current-password"
           placeholder="パスワードを入力"
-          className="w-full rounded-2xl border border-[color:var(--color-outline)] bg-white px-4 py-3 text-[color:var(--color-text)] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:border-brand"
+          className="w-full rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)] px-4 py-3 text-[color:var(--text)] shadow-[var(--shadow-1)] focus-ring"
         />
       </div>
 
@@ -56,7 +56,7 @@ export default function PasswordLoginForm({ action, submitLabel = 'ログイン'
       <div className="text-right">
         <Link
           href="/forgot-password"
-          className="text-sm font-medium text-brand underline underline-offset-4"
+          className="text-sm font-medium text-[color:var(--brand-strong)] underline underline-offset-4 hover:text-[color:var(--brand)]"
         >
           パスワードを忘れた方はコチラ
         </Link>

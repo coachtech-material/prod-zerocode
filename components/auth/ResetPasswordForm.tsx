@@ -241,7 +241,7 @@ export default function ResetPasswordForm({ errorMessage }: Props) {
       {errorMessage && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-xl border border-[color:var(--danger)]/40 bg-[color:var(--danger)]/15 px-4 py-3 text-sm text-[color:var(--danger)]"
         >
           {errorMessage}
         </div>
@@ -250,7 +250,7 @@ export default function ResetPasswordForm({ errorMessage }: Props) {
       {submitError && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-xl border border-[color:var(--danger)]/40 bg-[color:var(--danger)]/15 px-4 py-3 text-sm text-[color:var(--danger)]"
         >
           {submitError}
         </div>
@@ -259,7 +259,7 @@ export default function ResetPasswordForm({ errorMessage }: Props) {
       {sessionState === 'pending' && (
         <div
           role="status"
-          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
+          className="rounded-xl border border-[color:var(--warning)]/40 bg-[color:var(--warning)]/18 px-4 py-3 text-sm text-[color:var(--warning)]"
         >
           リンク情報を確認しています…
         </div>
@@ -268,7 +268,7 @@ export default function ResetPasswordForm({ errorMessage }: Props) {
       {sessionState === 'error' && sessionError && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-xl border border-[color:var(--danger)]/40 bg-[color:var(--danger)]/15 px-4 py-3 text-sm text-[color:var(--danger)]"
         >
           {sessionError}
         </div>
@@ -277,14 +277,14 @@ export default function ResetPasswordForm({ errorMessage }: Props) {
       {shouldShowMissingInfoNotice && (
         <div
           role="alert"
-          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
+          className="rounded-xl border border-[color:var(--warning)]/40 bg-[color:var(--warning)]/18 px-4 py-3 text-sm text-[color:var(--warning)]"
         >
           再設定リンクが無効か、必要な情報が不足しています。メールの「パスワードを再設定」リンクをもう一度押してください。
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="new-password" className="block text-sm font-medium text-[color:var(--color-text)]">
+        <label htmlFor="new-password" className="block text-sm font-medium text-[color:var(--text)]">
           新しいパスワード <span className="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
@@ -295,12 +295,12 @@ export default function ResetPasswordForm({ errorMessage }: Props) {
           aria-required="true"
           autoComplete="new-password"
           placeholder="新しいパスワードを入力"
-          className="w-full rounded-2xl border border-[color:var(--color-outline)] bg-white px-4 py-3 text-[color:var(--color-text)] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:border-brand"
+          className="w-full rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)] px-4 py-3 text-[color:var(--text)] shadow-[var(--shadow-1)] focus-ring"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="new-password-confirm" className="block text-sm font-medium text-[color:var(--color-text)]">
+        <label htmlFor="new-password-confirm" className="block text-sm font-medium text-[color:var(--text)]">
           新しいパスワード（確認） <span className="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
@@ -311,14 +311,14 @@ export default function ResetPasswordForm({ errorMessage }: Props) {
           aria-required="true"
           autoComplete="new-password"
           placeholder="同じパスワードを再入力"
-          className="w-full rounded-2xl border border-[color:var(--color-outline)] bg-white px-4 py-3 text-[color:var(--color-text)] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:border-brand"
+          className="w-full rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)] px-4 py-3 text-[color:var(--text)] shadow-[var(--shadow-1)] focus-ring"
         />
       </div>
 
       <button
         type="submit"
         disabled={!canSubmit}
-        className="inline-flex w-full items-center justify-center rounded-xl bg-[color:var(--color-primary-button)] px-4 py-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex w-full items-center justify-center rounded-xl bg-[color:var(--brand-strong)] px-4 py-3 text-sm font-semibold text-white focus-ring disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSubmitting ? '更新中…' : 'パスワードを更新'}
       </button>

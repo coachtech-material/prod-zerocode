@@ -44,7 +44,7 @@ export default async function LearnerCoursesPage() {
             <Link
               key={c.id}
               href={`/courses/${c.id}`}
-              className="block rounded-2xl border border-brand-sky/20 bg-white hover:bg-brand-sky/10 transition focus-ring"
+              className="surface-card block rounded-2xl transition hover:bg-[color:var(--surface-1)]/80 focus-ring"
               aria-describedby={descId}
             >
               {/* Thumbnail with 16:9 aspect ratio */}
@@ -66,11 +66,11 @@ export default async function LearnerCoursesPage() {
 
               {/* Text area */}
               <div className="p-4">
-                <div className="font-semibold text-lg text-slate-800" title={c.title}>{c.title}</div>
-                <p id={descId} className="mt-1 text-sm text-slate-600" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                <div className="text-lg font-semibold text-[color:var(--text)]" title={c.title}>{c.title}</div>
+                <p id={descId} className="mt-1 text-sm text-[color:var(--muted)]" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {summary}
                 </p>
-                <div className="mt-3 flex items-center justify-end gap-2 text-xs text-slate-600">
+                <div className="mt-3 flex items-center justify-end gap-2 text-xs text-[color:var(--muted)]">
                   <Clock className="h-4 w-4 opacity-80" />
                   <span>合計 {Number(c.total_minutes || 0)} 分</span>
                 </div>
@@ -80,7 +80,7 @@ export default async function LearnerCoursesPage() {
         })}
 
         {!courseList.length && (
-          <div className="text-slate-500">公開中のコースはありません</div>
+          <div className="text-[color:var(--muted)]">公開中のコースはありません</div>
         )}
       </div>
     </div>

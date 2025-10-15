@@ -52,13 +52,13 @@ export default function SectionToc({
 
   return (
     <div className="space-y-2">
-      <div className="rounded-xl border border-brand/10 bg-white shadow-sm overflow-hidden">
-        <div className="flex h-10 items-center px-3 text-base font-semibold text-slate-900 border-b border-brand-sky/15">
+      <div className="surface-card overflow-hidden rounded-xl">
+        <div className="flex h-10 items-center border-b border-[color:var(--line)] px-3 text-base font-semibold text-[color:var(--text)]">
           コース目次
         </div>
         {chapters.map((ch, i) => (
-          <div key={ch.id} className={i > 0 ? 'border-t border-brand-sky/15' : ''}>
-            <div className="flex h-9 items-center px-3 text-sm font-medium text-slate-600">
+          <div key={ch.id} className={i > 0 ? 'border-t border-[color:var(--line)]' : ''}>
+            <div className="flex h-9 items-center px-3 text-sm font-medium text-[color:var(--muted)]">
               <span className="truncate">{ch.title}</span>
             </div>
             <ul className="px-3 pb-2">
@@ -73,8 +73,8 @@ export default function SectionToc({
                       className={[
                         'flex h-9 items-center rounded-lg pl-6 pr-2 text-xs transition',
                         active
-                          ? 'bg-brand-sky/25 text-brand'
-                          : 'text-slate-700 hover:bg-brand-sky/20 hover:text-brand',
+                          ? 'bg-[color:var(--brand)]/18 text-[color:var(--brand-strong)]'
+                          : 'text-[color:var(--muted)] hover:bg-[color:var(--brand)]/12 hover:text-[color:var(--text)]',
                       ].join(' ')}
                       aria-current={active ? 'page' : undefined}
                     >

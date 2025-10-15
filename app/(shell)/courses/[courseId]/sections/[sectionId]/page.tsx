@@ -11,7 +11,9 @@ import SectionCompletionPanel from '@/components/learners/SectionCompletionPanel
 export default async function SectionView({ params }: { params: { courseId: string; sectionId: string } }) {
   await requireRole(['user']);
   const payload = await getSectionPageData(params.courseId, params.sectionId);
-  if (!payload) return <div className="rounded-xl border border-brand-sky/20 bg-white p-4">閲覧できません。</div>;
+  if (!payload) {
+    return <div className="surface-card rounded-xl p-4 text-[color:var(--text)]">閲覧できません。</div>;
+  }
 
   const { course, chapters, lessons, progress, section, content_md } = payload;
   const html = await renderMarkdownForView(content_md || '');
@@ -56,21 +58,21 @@ export default async function SectionView({ params }: { params: { courseId: stri
     <div className="mx-auto max-w-6xl space-y-6 px-4 lg:px-0">
       <ToastFromQuery />
       {/* Breadcrumbs */}
-      <nav aria-label="breadcrumbs" className="text-sm text-slate-500">
+      <nav aria-label="breadcrumbs" className="text-sm text-[color:var(--muted)]">
         <ol className="flex items-center gap-2">
           <li>
-            <Link href="/courses" className="underline decoration-white/20 hover:decoration-white focus-ring rounded">
+            <Link href="/courses" className="rounded underline decoration-transparent transition hover:decoration-[color:var(--brand)] focus-ring">
               コース一覧
             </Link>
           </li>
           <li aria-hidden>›</li>
           <li>
-            <Link href={`/courses/${params.courseId}`} className="underline decoration-white/20 hover:decoration-white focus-ring rounded">
+            <Link href={`/courses/${params.courseId}`} className="rounded underline decoration-transparent transition hover:decoration-[color:var(--brand)] focus-ring">
               {course?.title || 'コース'}
             </Link>
           </li>
           <li aria-hidden>›</li>
-          <li aria-current="page" className="text-slate-700 truncate max-w-[60ch]">
+          <li aria-current="page" className="max-w-[60ch] truncate text-[color:var(--text)]">
             {section.title}
           </li>
         </ol>
@@ -85,14 +87,17 @@ export default async function SectionView({ params }: { params: { courseId: stri
             initialCompleted={isCompleted}
           />
           <div>
-            <div className="border-t border-brand-sky/20" />
+            <div className="border-t border-[color:var(--line)]" />
             <div className="mt-6 flex flex-col lg:grid lg:grid-cols-[minmax(0,120ch)_auto] lg:items-start lg:gap-8">
-              <article
-                className="prose max-w-none dark:prose flex-1 lg:max-w-[120ch] lg:pr-8"
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
-              <div className="mb-6 lg:mb-0 lg:w-72 xl:w-80 shrink-0 lg:sticky lg:top-24 lg:pl-4 xl:pl-6">
-                <p className="mb-4 hidden text-xs font-semibold uppercase tracking-wide text-brand lg:block">コースメニュー</p>
+              <div className="rounded-[28px] border border-[color:var(--line)] bg-[color:var(--surface-1)]/60 p-6 shadow-[var(--shadow-1)]">
+                <article
+                  className="prose max-w-none flex-1 lg:max-w-[120ch] lg:pr-8 prose-headings:text-[#C2C6CC] prose-p:text-[#C2C6CC] prose-li:text-[#C2C6CC] prose-strong:text-[#C2C6CC] prose-em:text-[#C2C6CC] prose-code:text-[#C2C6CC]"
+                  style={{ color: '#C2C6CC' }}
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              </div>
+              <div className="mb-6 shrink-0 lg:sticky lg:top-24 lg:w-72 lg:pl-4 xl:w-80 xl:pl-6">
+                <p className="mb-4 hidden text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)] lg:block">コースメニュー</p>
                 <SectionToc
                   chapters={chapterList.map((c) => ({ id: c.id, title: c.title, chapter_sort_key: c.chapter_sort_key ?? 0 }))}
                   sectionsByChapter={sectionsByChapter}
@@ -102,7 +107,7 @@ export default async function SectionView({ params }: { params: { courseId: stri
                 />
                 <Link
                   href={`/courses/${params.courseId}`}
-                  className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-brand-yellow px-3 py-2 text-sm text-brand font-medium focus-ring hover:bg-brand-yellow/90 lg:hidden"
+                  className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[color:var(--brand)]/18 px-3 py-2 text-sm font-medium text-[color:var(--text)] focus-ring hover:bg-[color:var(--brand)]/26 lg:hidden"
                 >
                   ← コースに戻る
                 </Link>

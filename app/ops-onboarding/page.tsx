@@ -3,6 +3,7 @@ import InviteSessionHandler from '@/components/onboarding/InviteSessionHandler';
 import OpsOnboardingForm from '@/components/onboarding/OpsOnboardingForm';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireRole } from '@/lib/auth/requireRole';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,10 +15,13 @@ export default async function OpsOnboardingPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto flex min-h-[60vh] w-full max-w-xl flex-col items-center justify-center gap-6 p-6 text-center">
+      <div className="relative mx-auto flex min-h-[60vh] w-full max-w-xl flex-col items-center justify-center gap-6 p-6 text-center">
+        <div className="absolute right-4 top-4 z-20">
+          <ThemeToggle variant="secondary" />
+        </div>
         <InviteSessionHandler redirectPath="/ops-onboarding" />
-        <h1 className="text-2xl font-semibold text-slate-800">招待リンクを確認しています...</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-2xl font-semibold text-[color:var(--text)]">招待リンクを確認しています...</h1>
+        <p className="text-sm text-[color:var(--muted)]">
           ブラウザが開かれたまましばらくお待ちください。自動的にページが切り替わらない場合は、招待メール内のリンクを再度クリックしてください。
         </p>
       </div>
@@ -36,15 +40,18 @@ export default async function OpsOnboardingPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 px-6 py-12">
+    <div className="relative mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 px-6 py-12">
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle variant="secondary" />
+      </div>
       <InviteSessionHandler redirectPath="/ops-onboarding" />
       <header className="space-y-3 text-center">
-        <h1 className="text-3xl font-semibold text-slate-900">運営アカウントの初期設定</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-3xl font-semibold text-[color:var(--text)]">運営アカウントの初期設定</h1>
+        <p className="text-sm text-[color:var(--muted)]">
           新しいパスワードを設定すると、管理画面に移動します。
         </p>
       </header>
-      <div className="rounded-3xl border border-brand-sky/20 bg-white p-6 shadow-[0_12px_40px_rgba(65,120,255,0.08)]">
+      <div className="surface-card rounded-3xl p-6">
         <OpsOnboardingForm email={user.email ?? ''} />
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { IconButton } from '@/components/ui/IconButton';
 import { createClient } from '@/lib/supabase/client';
 import Logo from '@/icon/zerocode-logo.svg';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -53,46 +54,47 @@ export default function Header() {
   }, [open]);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 h-16 bg-[#1E4B9E] border-b border-[#163874]">
-      <div className="flex h-full items-center gap-3 px-3 text-white">
-        <Link href="/" className="flex items-center text-white">
+    <header className="fixed left-0 right-0 top-0 z-50 h-16 border-b border-[color:var(--line-strong)] bg-[color:var(--header-bg)] backdrop-blur-sm">
+      <div className="flex h-full items-center gap-3 px-3 text-[color:var(--text)]">
+        <Link href="/" className="flex items-center text-[color:var(--text)]">
           <Image src={Logo} alt="zerocode ロゴ" className="h-9 w-auto object-contain" priority />
         </Link>
         <nav className="ml-auto flex items-center gap-2">
-          <IconButton aria-label="ヘルプ" className="!text-white">
+          <ThemeToggle />
+          <IconButton aria-label="ヘルプ" variant="ghost">
             <CircleHelp size={18} />
           </IconButton>
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setOpen((v) => !v)}
               className={[
-                'ml-1 flex items-center gap-2.5 rounded-2xl px-2.5 pr-3 h-10',
-                'transition focus-ring'
+                'ml-1 flex h-10 items-center gap-2.5 rounded-2xl px-2.5 pr-3 transition focus-ring',
+                'bg-[color:var(--nav-icon-bg)] text-[color:var(--nav-icon-foreground)] hover:bg-[color:var(--nav-icon-hover)]',
               ].join(' ')}
               aria-label="ユーザーメニュー"
               aria-expanded={open}
               aria-haspopup="menu"
             >
-              <div className="h-9 w-9 overflow-hidden rounded-full ring-1 ring-brand-sky/30">
+              <div className="h-9 w-9 overflow-hidden rounded-full ring-1" style={{ borderColor: 'var(--line)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {avatar ? (
                   <img src={avatar} alt="avatar" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-brand-sky/40 to-brand/40" />
+                  <div className="h-full w-full bg-gradient-to-br from-brand/25 via-brand/10 to-brand/40" />
                 )}
               </div>
               {fullName && (
-                <span className="hidden sm:inline-block text-sm font-medium text-white max-w-[18ch] truncate" title={fullName}>
+                <span className="hidden max-w-[18ch] truncate text-sm font-medium sm:inline-block" title={fullName}>
                   {fullName}
                 </span>
               )}
               <ChevronDown size={16} className={["hidden sm:inline-block opacity-80 transition-transform", open ? 'rotate-180' : ''].join(' ')} />
             </button>
             {open && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-brand-sky/20 bg-[color:var(--color-surface)] shadow-lg backdrop-blur p-2 text-sm text-[color:var(--color-text)]">
-                <Link href="/settings/profile" className="block rounded-lg px-3 py-2 hover:bg-brand-sky/15">プロフィール</Link>
+              <div className="surface-menu absolute right-0 mt-2 w-48 rounded-2xl border border-[color:var(--line)] p-2 text-sm text-[color:var(--text)]">
+                <Link href="/settings/profile" className="block rounded-xl px-3 py-2 hover:bg-[color:var(--sidebar-hover)]">プロフィール</Link>
                 <button
-                  className="w-full text-left rounded-lg px-3 py-2 hover:bg-brand-sky/15"
+                  className="w-full text-left rounded-xl px-3 py-2 hover:bg-[color:var(--sidebar-hover)]"
                   onClick={async () => {
                     try {
                       const supabase = createClient();
