@@ -1,9 +1,16 @@
 import '../styles/globals.css';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import Toaster from '@/components/ui/Toaster';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'zerocode',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 const themeInitScript = `(() => {

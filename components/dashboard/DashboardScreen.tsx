@@ -70,8 +70,8 @@ const RUNNER_EMOJI = '🏃‍♂️';
 const TIMELINE_INTERVAL_DAYS = 1;
 const DEFAULT_PROGRAM_LENGTH_DAYS = 14;
 const MS_PER_DAY = 86_400_000;
-const MIN_TIMELINE_STEP_WIDTH = 68;
-const MIN_TIMELINE_WIDTH = 420;
+const MIN_TIMELINE_STEP_WIDTH = 56;
+const MIN_TIMELINE_WIDTH = 320;
 const fullDateFormatter = new Intl.DateTimeFormat('ja-JP', {
   year: 'numeric',
   month: 'numeric',

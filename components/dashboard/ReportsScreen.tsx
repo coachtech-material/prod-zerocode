@@ -121,59 +121,104 @@ export default function ReportsScreen() {
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
-          <div className="overflow-hidden rounded-2xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">日付</th>
-                  <th className="px-4 py-3">学習時間</th>
-                  <th className="px-4 py-3">カテゴリ / メモ</th>
-                  <th className="px-4 py-3">感想</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
+          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 sm:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-[720px] divide-y divide-slate-200 text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
-                      <Loader2 className="mr-2 inline-block h-5 w-5 animate-spin" /> 読み込み中…
-                    </td>
+                    <th className="px-4 py-3">日付</th>
+                    <th className="px-4 py-3">学習時間</th>
+                    <th className="px-4 py-3">カテゴリ / メモ</th>
+                    <th className="px-4 py-3">感想</th>
                   </tr>
-                ) : filteredReports.length ? (
-                  filteredReports.map((report) => (
-                    <tr
-                      key={report.id}
-                      className={`cursor-pointer transition ${
-                        selectedDate === report.date ? 'bg-brand/10' : 'hover:bg-slate-50'
-                      }`}
-                      onClick={() => setSelectedDate(report.date)}
-                    >
-                      <td className="px-4 py-3 font-medium text-slate-700">
-                        {formatDisplayDate(report.date)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {formatDuration(report.totalMinutes)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {report.items
-                          .map((item) => `${item.categoryName}${item.note ? `：${item.note}` : ''}`)
-                          .slice(0, 2)
-                          .join(' / ')}
-                        {report.items.length > 2 ? ' …' : ''}
-                      </td>
-                      <td className="px-4 py-3 text-slate-500">
-                        {report.reflectionText ? `${report.reflectionText.slice(0, 40)}…` : '—'}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
+                        <Loader2 className="mr-2 inline-block h-5 w-5 animate-spin" /> 読み込み中…
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
-                      日報がありません。
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  ) : filteredReports.length ? (
+                    filteredReports.map((report) => (
+                      <tr
+                        key={report.id}
+                        className={`cursor-pointer transition ${
+                          selectedDate === report.date ? 'bg-brand/10' : 'hover:bg-slate-50'
+                        }`}
+                        onClick={() => setSelectedDate(report.date)}
+                      >
+                        <td className="px-4 py-3 font-medium text-slate-700">
+                          {formatDisplayDate(report.date)}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {formatDuration(report.totalMinutes)}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {report.items
+                            .map((item) => `${item.categoryName}${item.note ? `：${item.note}` : ''}`)
+                            .slice(0, 2)
+                            .join(' / ')}
+                          {report.items.length > 2 ? ' …' : ''}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500">
+                          {report.reflectionText ? `${report.reflectionText.slice(0, 40)}…` : '—'}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
+                        日報がありません。
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="space-y-3 sm:hidden">
+            {loading ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+                <Loader2 className="mr-2 inline-block h-5 w-5 animate-spin" />
+                読み込み中…
+              </div>
+            ) : filteredReports.length ? (
+              filteredReports.map((report) => (
+                <button
+                  key={`mobile-${report.id}`}
+                  type="button"
+                  onClick={() => setSelectedDate(report.date)}
+                  className={[
+                    'w-full rounded-2xl border p-4 text-left text-sm shadow-sm transition focus-ring',
+                    selectedDate === report.date
+                      ? 'border-brand bg-brand/5'
+                      : 'border-slate-200 bg-white hover:border-brand hover:bg-brand/5',
+                  ].join(' ')}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-slate-500">
+                      {formatDisplayDate(report.date)}
+                    </span>
+                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand">
+                      {formatDuration(report.totalMinutes)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {report.items
+                      .map((item) => `${item.categoryName}${item.note ? `：${item.note}` : ''}`)
+                      .join(' / ')}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    {report.reflectionText ? `${report.reflectionText.slice(0, 40)}…` : '感想なし'}
+                  </p>
+                </button>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
+                日報がありません。
+              </div>
+            )}
           </div>
 
           <aside className="min-h-[240px] rounded-2xl border border-slate-200 bg-slate-50 p-4">

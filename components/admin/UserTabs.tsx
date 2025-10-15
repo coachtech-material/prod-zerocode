@@ -56,64 +56,115 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
     (renderActions ? 1 : 0);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-brand-sky/20">
-      <table className="w-full text-sm">
-        <thead className="bg-brand-sky/10 text-left text-slate-700">
-          <tr>
-            <th className="px-3 py-2">名前</th>
-            {showEmail && <th className="px-3 py-2">メール</th>}
-            {showPhone && <th className="px-3 py-2">電話番号</th>}
-            {showStatus && <th className="px-3 py-2">ステータス</th>}
-            <th className="px-3 py-2">受講開始日</th>
-            <th className="px-3 py-2">利用日数</th>
-            <th className="px-3 py-2">ロール</th>
-            <th className="px-3 py-2">ID</th>
-            {renderActions && <th className="px-3 py-2 text-right">操作</th>}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/10">
-          {rows.map((row) => {
-            const name =
-              [row.last_name || '', row.first_name || ''].filter(Boolean).join(' ').trim() ||
-              '(未設定)';
-            const issuedDate = row.issued_at ? new Date(row.issued_at) : null;
-            const issuedDisplay = issuedDate ? issuedDate.toLocaleDateString('ja-JP') : '-';
-            const dayCount = issuedDate
-              ? Math.max(1, Math.floor((today - issuedDate.getTime()) / 86400000) + 1)
-              : null;
-            return (
-              <tr key={row.id} className="hover:bg-white">
-                <td className="px-3 py-2 text-slate-800">{name}</td>
-                {showEmail && <td className="px-3 py-2 text-slate-700">{row.email || '-'}</td>}
-                {showPhone && <td className="px-3 py-2 text-slate-700">{row.phone || '-'}</td>}
-                {showStatus && (
-                  <td className="px-3 py-2">
-                    <StatusBadge row={row} />
-                  </td>
-                )}
-                <td className="px-3 py-2 text-slate-700">{issuedDisplay}</td>
-                <td className="px-3 py-2 text-slate-700">{dayCount ? `${dayCount}日目` : '-'}</td>
-                <td className="px-3 py-2">
-                  <code>{row.role}</code>
-                </td>
-                <td className="px-3 py-2 text-slate-500">
-                  <code className="break-all">{row.id}</code>
-                </td>
-                {renderActions && (
-                  <td className="px-3 py-2 text-right align-middle">{renderActions(row)}</td>
-                )}
+    <div>
+      <div className="hidden rounded-xl border border-brand-sky/20 sm:block">
+        <div className="overflow-x-auto">
+          <table className="min-w-[720px] w-full text-sm">
+            <thead className="bg-brand-sky/10 text-left text-slate-700">
+              <tr>
+                <th className="px-3 py-2">名前</th>
+                {showEmail && <th className="px-3 py-2">メール</th>}
+                {showPhone && <th className="px-3 py-2">電話番号</th>}
+                {showStatus && <th className="px-3 py-2">ステータス</th>}
+                <th className="px-3 py-2">受講開始日</th>
+                <th className="px-3 py-2">利用日数</th>
+                <th className="px-3 py-2">ロール</th>
+                <th className="px-3 py-2">ID</th>
+                {renderActions && <th className="px-3 py-2 text-right">操作</th>}
               </tr>
-            );
-          })}
-          {!rows.length && (
-            <tr>
-              <td className="px-3 py-8 text-center text-slate-500" colSpan={totalCols}>
-                データがありません
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              {rows.map((row) => {
+                const name =
+                  [row.last_name || '', row.first_name || ''].filter(Boolean).join(' ').trim() ||
+                  '(未設定)';
+                const issuedDate = row.issued_at ? new Date(row.issued_at) : null;
+                const issuedDisplay = issuedDate ? issuedDate.toLocaleDateString('ja-JP') : '-';
+                const dayCount = issuedDate
+                  ? Math.max(1, Math.floor((today - issuedDate.getTime()) / 86400000) + 1)
+                  : null;
+                return (
+                  <tr key={row.id} className="hover:bg-white">
+                    <td className="px-3 py-2 text-slate-800">{name}</td>
+                    {showEmail && <td className="px-3 py-2 text-slate-700">{row.email || '-'}</td>}
+                    {showPhone && <td className="px-3 py-2 text-slate-700">{row.phone || '-'}</td>}
+                    {showStatus && (
+                      <td className="px-3 py-2">
+                        <StatusBadge row={row} />
+                      </td>
+                    )}
+                    <td className="px-3 py-2 text-slate-700">{issuedDisplay}</td>
+                    <td className="px-3 py-2 text-slate-700">{dayCount ? `${dayCount}日目` : '-'}</td>
+                    <td className="px-3 py-2">
+                      <code>{row.role}</code>
+                    </td>
+                    <td className="px-3 py-2 text-slate-500">
+                      <code className="break-all">{row.id}</code>
+                    </td>
+                    {renderActions && (
+                      <td className="px-3 py-2 text-right align-middle">{renderActions(row)}</td>
+                    )}
+                  </tr>
+                );
+              })}
+              {!rows.length && (
+                <tr>
+                  <td className="px-3 py-8 text-center text-slate-500" colSpan={totalCols}>
+                    データがありません
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="space-y-3 sm:hidden">
+        {rows.map((row) => {
+          const name =
+            [row.last_name || '', row.first_name || ''].filter(Boolean).join(' ').trim() ||
+            '(未設定)';
+          const issuedDate = row.issued_at ? new Date(row.issued_at) : null;
+          const dayCount = issuedDate
+            ? Math.max(1, Math.floor((today - issuedDate.getTime()) / 86400000) + 1)
+            : null;
+          const actions = renderActions ? renderActions(row) : null;
+          return (
+            <div
+              key={row.id}
+              className="rounded-2xl border border-brand-sky/30 bg-white/60 p-4 text-sm shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-base font-semibold text-slate-800">{name}</p>
+                  {showEmail && (
+                    <p className="mt-1 text-xs text-slate-500 break-all">{row.email || '—'}</p>
+                  )}
+                  {showPhone && (
+                    <p className="mt-1 text-xs text-slate-500 break-all">{row.phone || '—'}</p>
+                  )}
+                </div>
+                <span className="text-xs text-slate-500">
+                  {dayCount ? `${dayCount}日目` : issuedDate ? '計算中' : '—'}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>受講開始日: {issuedDate ? issuedDate.toLocaleDateString('ja-JP') : '—'}</span>
+                <span>ロール: <code>{row.role}</code></span>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                {showStatus ? <StatusBadge row={row} /> : <span />}
+                <code className="text-[11px] text-slate-400 break-all">{row.id}</code>
+              </div>
+              {actions ? <div className="mt-3 flex justify-end gap-2">{actions}</div> : null}
+            </div>
+          );
+        })}
+        {!rows.length && (
+          <div className="rounded-2xl border border-dashed border-brand-sky/30 p-4 text-center text-sm text-slate-500">
+            データがありません
+          </div>
+        )}
+      </div>
     </div>
   );
 }
