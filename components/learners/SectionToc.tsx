@@ -13,6 +13,7 @@ type SectionTocProps = {
   courseId: string;
   currentSectionId: string;
   completedSectionIds?: string[];
+  className?: string;
 };
 
 export default function SectionToc({
@@ -21,6 +22,7 @@ export default function SectionToc({
   courseId,
   currentSectionId,
   completedSectionIds = [],
+  className = '',
 }: SectionTocProps) {
   const [completedSet, setCompletedSet] = useState<Set<string>>(() => new Set(completedSectionIds));
 
@@ -51,7 +53,7 @@ export default function SectionToc({
   const completedLookup = useMemo(() => completedSet, [completedSet]);
 
   return (
-    <div className="space-y-2">
+    <div className={['space-y-2', className].filter(Boolean).join(' ')}>
       <div className="surface-card overflow-hidden rounded-xl">
         <div className="flex h-10 items-center border-b border-[color:var(--line)] px-3 text-base font-semibold text-[color:var(--text)]">
           コース目次

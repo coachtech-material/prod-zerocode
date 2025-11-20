@@ -1,12 +1,13 @@
 import { requireRole } from '@/lib/auth/requireRole';
 import { getSectionPageData, LessonMeta } from '@/lib/learners/queries';
 import { renderMarkdownForView } from '@/lib/learners/markdownView';
-import Link from 'next/link';
 import ToastFromQuery from '@/components/ui/ToastFromQuery';
 import { addTimeSpent } from './actions';
 import SectionToc from '@/components/learners/SectionToc';
 import LessonHeader from '@/components/learners/LessonHeader';
 import SectionCompletionPanel from '@/components/learners/SectionCompletionPanel';
+import SectionTocMobileDrawer from '@/components/learners/SectionTocMobileDrawer';
+import Link from 'next/link';
 
 export const preferredRegion = ['hnd1'];
 
@@ -60,7 +61,7 @@ export default async function SectionView({ params }: { params: { courseId: stri
     <div className="mx-auto max-w-6xl space-y-6 px-4 lg:px-0">
       <ToastFromQuery />
       {/* Breadcrumbs */}
-      <nav aria-label="breadcrumbs" className="text-sm text-[color:var(--muted)]">
+      <nav aria-label="breadcrumbs" className="hidden text-sm text-[color:var(--muted)] sm:block">
         <ol className="flex items-center gap-2">
           <li>
             <Link href="/courses" className="rounded underline decoration-transparent transition hover:decoration-[color:var(--brand)] focus-ring">
@@ -88,6 +89,17 @@ export default async function SectionView({ params }: { params: { courseId: stri
             durationMin={section.duration_min}
             initialCompleted={isCompleted}
           />
+          <SectionTocMobileDrawer
+            chapters={chapterList.map((c) => ({
+              id: c.id,
+              title: c.title,
+              chapter_sort_key: c.chapter_sort_key ?? 0,
+            }))}
+            sectionsByChapter={sectionsByChapter}
+            courseId={params.courseId}
+            currentSectionId={params.sectionId}
+            completedSectionIds={Array.from(completedSectionIds)}
+          />
           <div>
             <div className="border-t border-[color:var(--line)]" />
             <div className="mt-6 flex flex-col lg:grid lg:grid-cols-[minmax(0,120ch)_auto] lg:items-start lg:gap-8">
@@ -98,8 +110,8 @@ export default async function SectionView({ params }: { params: { courseId: stri
                   dangerouslySetInnerHTML={{ __html: html }}
                 />
               </div>
-              <div className="mb-6 shrink-0 lg:sticky lg:top-24 lg:w-72 lg:pl-4 xl:w-80 xl:pl-6">
-                <p className="mb-4 hidden text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)] lg:block">コースメニュー</p>
+              <div className="mb-6 hidden shrink-0 lg:sticky lg:top-24 lg:block lg:w-72 lg:pl-4 xl:w-80 xl:pl-6">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)] lg:block">コースメニュー</p>
                 <SectionToc
                   chapters={chapterList.map((c) => ({ id: c.id, title: c.title, chapter_sort_key: c.chapter_sort_key ?? 0 }))}
                   sectionsByChapter={sectionsByChapter}
@@ -107,12 +119,6 @@ export default async function SectionView({ params }: { params: { courseId: stri
                   currentSectionId={params.sectionId}
                   completedSectionIds={Array.from(completedSectionIds)}
                 />
-                <Link
-                  href={`/courses/${params.courseId}`}
-                  className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[color:var(--brand)]/18 px-3 py-2 text-sm font-medium text-[color:var(--text)] focus-ring hover:bg-[color:var(--brand)]/26 lg:hidden"
-                >
-                  ← コースに戻る
-                </Link>
               </div>
             </div>
           </div>

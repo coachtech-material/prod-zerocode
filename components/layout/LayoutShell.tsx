@@ -127,7 +127,7 @@ export default function LayoutShell({ role, children }: { role: 'user' | 'staff'
           sidebarToggleRef={sidebarToggleRef}
         />
         <main
-          className="flex-1 overflow-y-auto px-4 pb-[calc(24px+var(--safe-area-bottom,0px))] sm:px-5 md:px-6 lg:px-8"
+          className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(24px+var(--safe-area-bottom,0px))] sm:px-5 md:px-6 lg:px-8"
           style={{ paddingTop: 'calc(56px + var(--safe-area-top, 0px))' }}
           data-scroll-container="layout-shell-main"
         >

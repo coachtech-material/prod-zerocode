@@ -253,6 +253,42 @@ textarea::placeholder {
   background-color: var(--line);
 }
 
+.prose {
+  width: 100%;
+  max-width: 100%;
+}
+
+.prose pre,
+.prose code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.prose img,
+.prose video,
+.prose iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+.timeline-scroll {
+  min-width: var(--timeline-min-width, auto);
+}
+
+@media (max-width: 639px) {
+  .timeline-scroll {
+    min-width: 100% !important;
+  }
+}
+
 :root[data-theme='dark'] .bg-white,
 :root[data-theme='dark'] .bg-slate-50,
 :root[data-theme='dark'] .bg-slate-100 {

@@ -374,11 +374,12 @@ function ProjectTimeline({ startDate, endDate }: { startDate: Date; endDate: Dat
   }, [startDate, endDate]);
 
   const minWidth = Math.max(milestones.length * MIN_TIMELINE_STEP_WIDTH, MIN_TIMELINE_WIDTH);
+  const timelineStyle = { '--timeline-min-width': `${minWidth}px` } as React.CSSProperties;
 
   return (
     <div className="mt-5">
       <div className="mt-3 overflow-x-auto overflow-y-visible">
-        <div className="relative overflow-visible px-4 pb-14 pt-12" style={{ minWidth }}>
+        <div className="timeline-scroll relative overflow-visible px-4 pb-14 pt-12" style={timelineStyle}>
           <div className="absolute left-4 right-4 top-[60px] h-1 rounded-full bg-slate-200 overflow-hidden">
             <div
               className="h-full rounded-full bg-brand transition-all"
@@ -1168,7 +1169,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <div className="space-y-6 px-6 py-8">
+    <div className="space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold text-[color:var(--text)]">ダッシュボード</h1>
         <p className="text-sm text-[color:var(--muted)]">

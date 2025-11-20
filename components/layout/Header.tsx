@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Bell, Menu, Search, CircleHelp } from 'lucide-react';
+import { Menu, CircleHelp } from 'lucide-react';
 import ThemeToggle from '@/components/theme/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
 import Logo from '@/icon/zerocode-logo.svg';
@@ -175,7 +175,7 @@ export default function Header({
       className="sticky top-0 z-50 flex h-14 items-center bg-[#0d2438]/80 px-4 text-[var(--muted)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] backdrop-blur md:px-6 lg:px-8"
       style={{ paddingTop: 'var(--safe-area-top, 0px)' }}
     >
-      <div className="flex w-full items-center gap-3">
+      <div className="flex w-full items-center gap-3 overflow-hidden">
         <button
           ref={sidebarToggleRef}
           type="button"
@@ -195,17 +195,6 @@ export default function Header({
           <button type="button" className={iconButtonClass} aria-label="ヘルプセンター">
             <CircleHelp size={18} />
           </button>
-          <button type="button" className={iconButtonClass} aria-label="検索を開く">
-            <Search size={18} />
-          </button>
-          <div className="relative">
-            <button type="button" className={iconButtonClass} aria-label="通知を開く">
-              <Bell size={18} />
-            </button>
-            <span className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white ring-2 ring-[var(--panel)]">
-              3
-            </span>
-          </div>
           <div className="relative">
             <button
               ref={avatarButtonRef}
