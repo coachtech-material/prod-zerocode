@@ -58,7 +58,7 @@ export default function Sidebar({ role, expanded, onExpandToggle, mobileOpen, on
       <aside
         className={[
           'hidden md:fixed md:inset-y-0 md:flex md:flex-col md:border-r md:border-[var(--sidebar-border)] md:bg-[var(--sidebar-bg)] md:text-[var(--muted)] md:shadow-[0_8px_24px_rgba(0,0,0,0.35)] md:transition-[width] md:duration-200 md:ease-out md:motion-reduce:transition-none',
-          expanded ? 'md:w-64' : 'md:w-14',
+          expanded ? 'md:w-[260px]' : 'md:w-[64px]',
         ].join(' ')}
         aria-label="メインメニュー"
       >
