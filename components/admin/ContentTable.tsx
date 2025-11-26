@@ -48,7 +48,8 @@ type ChapterNode = Chapter & {
 type DragData =
   | { type: 'chapter'; chapterId: string }
   | { type: 'section'; sectionId: string; chapterId: string }
-  | { type: 'chapter-drop'; chapterId: string };
+  | { type: 'chapter-drop'; chapterId: string }
+  | { type: 'section-drop'; chapterId: string; index: number };
 
 const collapseStorageKey = (courseId: string) => `course-structure:${courseId}:collapsed`;
 
