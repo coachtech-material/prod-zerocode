@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 function isHttpsUrl(u: string) {
@@ -232,6 +233,51 @@ export async function restoreCourse(courseId: string) {
     .eq('id', courseId);
   if (error) redirect(`/admin/courses/${courseId}?error=` + encodeURIComponent(error.message));
   redirect(`/admin/courses/${courseId}?message=` + encodeURIComponent('コースを復元しました'));
+}
+
+export type CourseStructureReorderPayload = {
+  chapterOrder: Array<{ id: string; order: number }>;
+  sectionOrder: Array<{ id: string; chapterId: string; order: number }>;
+};
+
+export async function reorderCourseStructure(courseId: string, payload: CourseStructureReorderPayload) {
+  const supabase = createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+  if (!payload || !Array.isArray(payload.chapterOrder) || !Array.isArray(payload.sectionOrder)) {
+    throw new Error('並び順の情報が不正です');
+  }
+
+  const nowIso = new Date().toISOString();
+
+  for (const chapter of payload.chapterOrder) {
+    if (!chapter.id) continue;
+    const order = Number(chapter.order) || 0;
+    await supabase
+      .from('chapters')
+      .update({ chapter_sort_key: order, updated_at: nowIso, updated_by: user!.id })
+      .eq('id', chapter.id)
+      .eq('course_id', courseId);
+  }
+
+  for (const section of payload.sectionOrder) {
+    if (!section.id || !section.chapterId) continue;
+    const order = Number(section.order) || 0;
+    await supabase
+      .from('lessons')
+      .update({
+        chapter_id: section.chapterId,
+        section_sort_key: order,
+        updated_at: nowIso,
+        updated_by: user!.id,
+      })
+      .eq('id', section.id)
+      .eq('course_id', courseId);
+  }
+
+  revalidatePath(`/admin/courses/${courseId}`);
 }
 
 export async function createChapter(courseId: string, formData: FormData) {

@@ -27,20 +27,20 @@ type TableProps = {
 function StatusBadge({ row }: { row: Row }) {
   if (row.login_disabled) {
     return (
-      <span className="inline-flex items-center rounded-md bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-600">
+      <span className="inline-flex items-center rounded-md bg-rose-500/20 px-2 py-0.5 text-xs font-semibold text-rose-200">
         停止中
       </span>
     );
   }
   if (row.inactive) {
     return (
-      <span className="inline-flex items-center rounded-md bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">
+      <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 text-xs font-semibold text-[color:var(--muted)]">
         非ログイン
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
+    <span className="inline-flex items-center rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-100">
       アクティブ
     </span>
   );
@@ -57,10 +57,10 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
 
   return (
     <div>
-      <div className="hidden rounded-xl border border-brand-sky/20 sm:block">
+      <div className="hidden rounded-xl border border-white/10 bg-[color:var(--surface-1)] shadow-[0_15px_35px_rgba(0,0,0,0.35)] sm:block">
         <div className="overflow-x-auto">
-          <table className="min-w-[720px] w-full text-sm">
-            <thead className="bg-brand-sky/10 text-left text-slate-700">
+          <table className="min-w-[720px] w-full text-sm text-[color:var(--text)]">
+            <thead className="bg-[color:var(--surface-2)] text-left text-[color:var(--muted)]">
               <tr>
                 <th className="px-3 py-2">名前</th>
                 {showEmail && <th className="px-3 py-2">メール</th>}
@@ -84,21 +84,21 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
                   ? Math.max(1, Math.floor((today - issuedDate.getTime()) / 86400000) + 1)
                   : null;
                 return (
-                  <tr key={row.id} className="hover:bg-white">
-                    <td className="px-3 py-2 text-slate-800">{name}</td>
-                    {showEmail && <td className="px-3 py-2 text-slate-700">{row.email || '-'}</td>}
-                    {showPhone && <td className="px-3 py-2 text-slate-700">{row.phone || '-'}</td>}
+                  <tr key={row.id} className="transition hover:bg-white/5">
+                    <td className="px-3 py-2 text-[color:var(--text)]">{name}</td>
+                    {showEmail && <td className="px-3 py-2 text-[color:var(--muted)]">{row.email || '-'}</td>}
+                    {showPhone && <td className="px-3 py-2 text-[color:var(--muted)]">{row.phone || '-'}</td>}
                     {showStatus && (
                       <td className="px-3 py-2">
                         <StatusBadge row={row} />
                       </td>
                     )}
-                    <td className="px-3 py-2 text-slate-700">{issuedDisplay}</td>
-                    <td className="px-3 py-2 text-slate-700">{dayCount ? `${dayCount}日目` : '-'}</td>
+                    <td className="px-3 py-2 text-[color:var(--muted)]">{issuedDisplay}</td>
+                    <td className="px-3 py-2 text-[color:var(--muted)]">{dayCount ? `${dayCount}日目` : '-'}</td>
                     <td className="px-3 py-2">
                       <code>{row.role}</code>
                     </td>
-                    <td className="px-3 py-2 text-slate-500">
+                    <td className="px-3 py-2 text-[color:var(--muted)]">
                       <code className="break-all">{row.id}</code>
                     </td>
                     {renderActions && (
@@ -109,7 +109,7 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
               })}
               {!rows.length && (
                 <tr>
-                  <td className="px-3 py-8 text-center text-slate-500" colSpan={totalCols}>
+                  <td className="px-3 py-8 text-center text-[color:var(--muted)]" colSpan={totalCols}>
                     データがありません
                   </td>
                 </tr>
@@ -131,36 +131,36 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
           return (
             <div
               key={row.id}
-              className="rounded-2xl border border-brand-sky/30 bg-white/60 p-4 text-sm shadow-sm"
+              className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-[color:var(--text)] shadow-sm"
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-base font-semibold text-slate-800">{name}</p>
+                  <p className="text-base font-semibold text-[color:var(--text)]">{name}</p>
                   {showEmail && (
-                    <p className="mt-1 text-xs text-slate-500 break-all">{row.email || '—'}</p>
+                    <p className="mt-1 break-all text-xs text-[color:var(--muted)]">{row.email || '—'}</p>
                   )}
                   {showPhone && (
-                    <p className="mt-1 text-xs text-slate-500 break-all">{row.phone || '—'}</p>
+                    <p className="mt-1 break-all text-xs text-[color:var(--muted)]">{row.phone || '—'}</p>
                   )}
                 </div>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-[color:var(--muted)]">
                   {dayCount ? `${dayCount}日目` : issuedDate ? '計算中' : '—'}
                 </span>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[color:var(--muted)]">
                 <span>受講開始日: {issuedDate ? issuedDate.toLocaleDateString('ja-JP') : '—'}</span>
                 <span>ロール: <code>{row.role}</code></span>
               </div>
               <div className="mt-2 flex items-center justify-between">
                 {showStatus ? <StatusBadge row={row} /> : <span />}
-                <code className="text-[11px] text-slate-400 break-all">{row.id}</code>
+                <code className="break-all text-[11px] text-[color:var(--muted)]">{row.id}</code>
               </div>
               {actions ? <div className="mt-3 flex justify-end gap-2">{actions}</div> : null}
             </div>
           );
         })}
         {!rows.length && (
-          <div className="rounded-2xl border border-dashed border-brand-sky/30 p-4 text-center text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-white/20 p-4 text-center text-sm text-[color:var(--muted)]">
             データがありません
           </div>
         )}
@@ -241,7 +241,7 @@ export default function UserTabs({
           type="button"
           onClick={() => handleDelete(row)}
           disabled={pending}
-          className="rounded-md bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-100 shadow-sm transition hover:bg-rose-500/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           削除
         </button>
@@ -258,7 +258,7 @@ export default function UserTabs({
           type="button"
           onClick={() => handleDelete(row)}
           disabled={pending}
-          className="rounded-md bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-100 shadow-sm transition hover:bg-rose-500/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           削除
         </button>

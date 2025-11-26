@@ -64,18 +64,18 @@ export default function AnalysisScreen() {
     loadData();
   }, [loadData]);
 
-  const last14Days = useMemo(() => {
+  const last7Days = useMemo(() => {
     const todayKey = formatDateKey(today.getFullYear(), today.getMonth() + 1, today.getDate());
     const endDate = new Date(todayKey);
     const startDate = new Date(endDate);
-    startDate.setDate(startDate.getDate() - 13);
+    startDate.setDate(startDate.getDate() - 6);
 
     const reportMap = new Map<string, DailyReportSummary>();
     dailyReports.forEach((report) => {
       reportMap.set(report.date, report);
     });
 
-    return Array.from({ length: 14 }).map((_, index) => {
+    return Array.from({ length: 7 }).map((_, index) => {
       const current = new Date(startDate);
       current.setDate(startDate.getDate() + index);
       const key = formatDateKey(current.getFullYear(), current.getMonth() + 1, current.getDate());
@@ -91,8 +91,8 @@ export default function AnalysisScreen() {
   }, [dailyReports]);
 
   const maxDailyMinutes = useMemo(() => {
-    return Math.max(1, ...last14Days.map((day) => day.totalMinutes));
-  }, [last14Days]);
+    return Math.max(1, ...last7Days.map((day) => day.totalMinutes));
+  }, [last7Days]);
 
   const pieStyles = useMemo(() => {
     const totalPassed = chapterTests.reduce((acc, item) => acc + item.passedTests, 0);
@@ -123,7 +123,7 @@ export default function AnalysisScreen() {
     <div className="space-y-6 px-6 py-8">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold text-slate-800">分析レポート</h1>
-        <p className="text-sm text-slate-500">直近14日間の学習状況と確認テストの進捗を振り返りましょう。</p>
+        <p className="text-sm text-slate-500">直近1週間の学習状況と確認テストの進捗を振り返りましょう。</p>
       </header>
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         {error && (
@@ -163,9 +163,9 @@ export default function AnalysisScreen() {
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-semibold text-slate-700">14日間：学習時間</h2>
+                <h2 className="text-sm font-semibold text-slate-700">1週間：学習時間</h2>
                 <div className="mt-4 flex items-end gap-2 overflow-x-auto">
-                  {last14Days.map((day) => (
+                  {last7Days.map((day) => (
                     <div key={day.key} className="flex min-w-[48px] flex-col items-center gap-2">
                       <div className="flex h-36 w-full items-end justify-center rounded-lg bg-slate-100">
                         <div
@@ -181,9 +181,9 @@ export default function AnalysisScreen() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-semibold text-slate-700">14日間：日報投稿状況</h2>
+                <h2 className="text-sm font-semibold text-slate-700">1週間：日報投稿状況</h2>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {last14Days.map((day) => (
+                  {last7Days.map((day) => (
                     <div
                       key={`report-${day.key}`}
                       className={[

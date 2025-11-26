@@ -1,7 +1,29 @@
 "use client";
-import { Fragment, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Shapes, FileText } from 'lucide-react';
+
 import Link from 'next/link';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { reorderCourseStructure } from '@/app/(shell)/admin/courses/actions';
 
 type Chapter = {
   id: string;
@@ -19,6 +41,228 @@ type Section = {
   chapter_id: string;
 };
 
+type ChapterNode = Chapter & {
+  sections: Section[];
+};
+
+type DragData =
+  | { type: 'chapter'; chapterId: string }
+  | { type: 'section'; sectionId: string; chapterId: string }
+  | { type: 'chapter-drop'; chapterId: string };
+
+const collapseStorageKey = (courseId: string) => `course-structure:${courseId}:collapsed`;
+
+const statusBadge = (status: string) =>
+  status === 'published'
+    ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-100'
+    : 'border-white/20 bg-white/5 text-[color:var(--muted)]';
+
+function buildStructure(chapters: Chapter[], sections: Section[]): ChapterNode[] {
+  const map = new Map<string, Section[]>();
+  sections.forEach((section) => {
+    if (!section.chapter_id) return;
+    if (!map.has(section.chapter_id)) map.set(section.chapter_id, []);
+    map.get(section.chapter_id)!.push({ ...section });
+  });
+  for (const [, items] of map) {
+    items.sort((a, b) => (a.section_sort_key ?? 0) - (b.section_sort_key ?? 0));
+  }
+  return chapters
+    .slice()
+    .sort((a, b) => (a.chapter_sort_key ?? 0) - (b.chapter_sort_key ?? 0))
+    .map((chapter) => ({
+      ...chapter,
+      sections: map.get(chapter.id)?.map((section) => ({ ...section })) ?? [],
+    }));
+}
+
+function cloneStructure(nodes: ChapterNode[]): ChapterNode[] {
+  return nodes.map((chapter) => ({
+    ...chapter,
+    sections: chapter.sections.map((section) => ({ ...section })),
+  }));
+}
+
+function structuresEqual(a: ChapterNode[], b: ChapterNode[]) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].id !== b[i].id) return false;
+    if (a[i].sections.length !== b[i].sections.length) return false;
+    for (let j = 0; j < a[i].sections.length; j++) {
+      if (a[i].sections[j].id !== b[i].sections[j].id) return false;
+    }
+  }
+  return true;
+}
+
+function findSectionLocation(nodes: ChapterNode[], sectionId: string) {
+  for (let chapterIndex = 0; chapterIndex < nodes.length; chapterIndex++) {
+    const sectionIndex = nodes[chapterIndex].sections.findIndex((section) => section.id === sectionId);
+    if (sectionIndex !== -1) {
+      return { chapterIndex, sectionIndex };
+    }
+  }
+  return null;
+}
+
+function ChapterDropZone({ chapterId }: { chapterId: string }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `chapter-drop-${chapterId}`,
+    data: { type: 'chapter-drop', chapterId },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      className={[
+        'mt-3 flex h-10 items-center justify-center rounded-xl border border-dashed border-white/15 text-xs text-[color:var(--muted)] transition',
+        isOver ? 'border-brand bg-brand/10 text-brand' : '',
+      ].join(' ')}
+    >
+      ここにテストを移動
+    </div>
+  );
+}
+
+function SectionDropZone({ chapterId, index }: { chapterId: string; index: number }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `section-drop-${chapterId}-${index}`,
+    data: { type: 'section-drop', chapterId, index },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      className={[
+        'my-1 flex h-8 items-center justify-center rounded-xl border border-dashed border-white/15 text-[11px] text-[color:var(--muted)] transition',
+        isOver ? 'border-brand bg-brand/10 text-brand' : '',
+      ].join(' ')}
+    >
+      ここに挿入
+    </div>
+  );
+}
+
+function ChapterCard({
+  chapter,
+  collapsed,
+  toggle,
+  children,
+}: {
+  chapter: ChapterNode;
+  collapsed: boolean;
+  toggle: () => void;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `chapter-${chapter.id}`,
+    data: { type: 'chapter', chapterId: chapter.id },
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        'rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_15px_35px_rgba(0,0,0,0.35)] transition',
+        isDragging ? 'opacity-60 ring-1 ring-brand/40' : '',
+      ].join(' ')}
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={toggle}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[color:var(--text)] transition hover:bg-white/10 focus-ring"
+          aria-label={collapsed ? 'チャプターを展開' : 'チャプターを折りたたむ'}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+        </button>
+        <button
+          type="button"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[color:var(--text)] transition hover:bg-white/10 focus-ring"
+          aria-label="チャプターの並び替えを開始"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={16} />
+        </button>
+        <div className="flex-1 min-w-[200px] space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-base font-semibold text-[color:var(--text)]">{chapter.title}</span>
+            <span className={['inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] leading-4', statusBadge(chapter.status)].join(' ')}>
+              {chapter.status === 'published' ? '公開' : '下書き'}
+            </span>
+            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-[color:var(--muted)]">
+              #{chapter.chapter_sort_key}
+            </span>
+          </div>
+          <p className="text-xs text-[color:var(--muted)]">テスト {chapter.sections.length} 件</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('add-content:open', { detail: { chapterId: chapter.id } }))}
+          className="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-semibold text-[color:var(--text)] transition hover:bg-white/10 focus-ring"
+        >
+          ＋テストを追加
+        </button>
+      </div>
+      {!collapsed && children}
+    </div>
+  );
+}
+
+function SectionRow({
+  section,
+  courseId,
+}: {
+  section: Section;
+  courseId: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `section-${section.id}`,
+    data: { type: 'section', sectionId: section.id, chapterId: section.chapter_id },
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        'flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 transition',
+        isDragging ? 'opacity-60 ring-1 ring-brand/40' : '',
+      ].join(' ')}
+    >
+      <button
+        type="button"
+        className="mt-1 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[color:var(--text)] transition hover:bg-white/10 focus-ring"
+        aria-label="テストの並び替えを開始"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={14} />
+      </button>
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/admin/courses/${courseId}/sections/${section.id}`}
+            className="text-sm font-semibold text-[color:var(--text)] underline decoration-transparent transition hover:decoration-brand"
+          >
+            {section.title}
+          </Link>
+          <span className={['inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] leading-4', statusBadge(section.status)].join(' ')}>
+            {section.status === 'published' ? '公開' : '下書き'}
+          </span>
+        </div>
+        <div className="text-xs text-[color:var(--muted)]">目安: {section.duration_min || 0} 分</div>
+      </div>
+    </div>
+  );
+}
+
 export default function ContentTable({
   chapters,
   sections,
@@ -28,180 +272,250 @@ export default function ContentTable({
   sections: Section[];
   courseId: string;
 }) {
-  const [open, setOpen] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    for (const ch of chapters) initial[ch.id] = true;
-    return initial;
-  });
+  const computedStructure = useMemo(() => buildStructure(chapters, sections), [chapters, sections]);
+  const [structure, setStructure] = useState<ChapterNode[]>(computedStructure);
+  const [isDragProcess, setIsDragProcess] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isSaving, startTransition] = useTransition();
+  const pendingStructureRef = useRef<ChapterNode[] | null>(null);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, Section[]>();
-    for (const s of sections) {
-      if (!map.has(s.chapter_id)) map.set(s.chapter_id, []);
-      map.get(s.chapter_id)!.push(s);
-    }
-    for (const [, arr] of map) {
-      arr.sort((a, b) => (a.section_sort_key ?? 0) - (b.section_sort_key ?? 0));
-    }
-    return map;
-  }, [sections]);
+  useEffect(() => {
+    if (isDragProcess) return;
+    setStructure((prev) => (structuresEqual(prev, computedStructure) ? prev : computedStructure));
+  }, [computedStructure, isDragProcess]);
 
-  const chapterDuration = (chapterId: string) => {
-    const arr = grouped.get(chapterId) || [];
-    return arr
-      .filter((s) => s.status === 'published')
-      .reduce((acc, s) => acc + (s.duration_min || 0), 0);
-  };
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(collapseStorageKey(courseId));
+      if (raw) setCollapsed(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+  }, [courseId]);
+
+  const saveCollapsed = useCallback(
+    (next: Record<string, boolean>) => {
+      setCollapsed(next);
+      try {
+        localStorage.setItem(collapseStorageKey(courseId), JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+    },
+    [courseId]
+  );
+
+  const toggleChapter = useCallback(
+    (id: string) => {
+      saveCollapsed({ ...collapsed, [id]: !collapsed[id] });
+    },
+    [collapsed, saveCollapsed]
+  );
+
+  const ensureExpanded = useCallback(
+    (chapterId: string) => {
+      if (collapsed[chapterId]) {
+        saveCollapsed({ ...collapsed, [chapterId]: false });
+      }
+    },
+    [collapsed, saveCollapsed]
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const persistStructure = useCallback(
+    (nextStructure: ChapterNode[]) => {
+      const payload = {
+        chapterOrder: nextStructure.map((chapter, index) => ({
+          id: chapter.id,
+          order: index + 1,
+        })),
+        sectionOrder: nextStructure.flatMap((chapter) =>
+          chapter.sections.map((section, index) => ({
+            id: section.id,
+            chapterId: chapter.id,
+            order: index + 1,
+          }))
+        ),
+      };
+      setSaveMessage('並び順を更新しています…');
+      startTransition(async () => {
+        try {
+          await reorderCourseStructure(courseId, payload);
+          setSaveMessage('並び順を保存しました');
+          setTimeout(() => setSaveMessage(null), 1800);
+        } catch (error) {
+          console.error(error);
+          setSaveMessage('並び順の保存に失敗しました');
+        }
+      });
+    },
+    [courseId]
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    if (event.active.data.current?.type === 'section') {
+      const chapterId = event.active.data.current.chapterId as string | undefined;
+      if (chapterId) ensureExpanded(chapterId);
+    }
+    setIsDragProcess(true);
+  }, [ensureExpanded]);
+
+  const moveChapter = useCallback((fromId: string, toId: string) => {
+    setStructure((prev) => {
+      const oldIndex = prev.findIndex((chapter) => chapter.id === fromId);
+      const newIndex = prev.findIndex((chapter) => chapter.id === toId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prev;
+      const next = arrayMove(prev, oldIndex, newIndex);
+      pendingStructureRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const moveSection = useCallback(
+    (sectionId: string, destinationChapterId: string, destinationIndex: number) => {
+      setStructure((prev) => {
+        const next = cloneStructure(prev);
+        const sourceLocation = findSectionLocation(next, sectionId);
+        const targetChapterIndex = next.findIndex((chapter) => chapter.id === destinationChapterId);
+        if (!sourceLocation || targetChapterIndex === -1) return prev;
+        const sourceChapter = next[sourceLocation.chapterIndex];
+        const destinationChapter = next[targetChapterIndex];
+        if (
+          destinationChapter.id === sourceChapter.id &&
+          (destinationIndex === sourceLocation.sectionIndex ||
+            destinationIndex === sourceLocation.sectionIndex + 1)
+        ) {
+          return prev;
+        }
+        const [moved] = sourceChapter.sections.splice(sourceLocation.sectionIndex, 1);
+        if (!moved) return prev;
+        moved.chapter_id = destinationChapter.id;
+        let insertIndex = destinationIndex;
+        if (
+          destinationChapter.id === sourceChapter.id &&
+          insertIndex > sourceLocation.sectionIndex
+        ) {
+          insertIndex -= 1;
+        }
+        insertIndex = Math.max(0, Math.min(insertIndex, destinationChapter.sections.length));
+        destinationChapter.sections.splice(insertIndex, 0, moved);
+        pendingStructureRef.current = next;
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over) return;
+      const activeData = active.data.current as DragData | undefined;
+      const overData = over.data.current as DragData | undefined;
+      if (!activeData || !overData) return;
+
+      if (activeData.type === 'chapter') {
+        if (overData.type === 'chapter' && activeData.chapterId !== overData.chapterId) {
+          moveChapter(activeData.chapterId, overData.chapterId);
+        }
+        return;
+      }
+
+      if (activeData.type === 'section') {
+        const activeSectionId = activeData.sectionId;
+        if (overData.type === 'section-drop') {
+          ensureExpanded(overData.chapterId);
+          moveSection(activeSectionId, overData.chapterId, overData.index);
+          return;
+        }
+        if (overData.type === 'section') {
+          if (activeSectionId === overData.sectionId) return;
+          const overLocation = findSectionLocation(structure, overData.sectionId);
+          if (!overLocation) return;
+          ensureExpanded(overData.chapterId);
+          moveSection(activeSectionId, overData.chapterId, overLocation.sectionIndex);
+          return;
+        }
+        if (overData.type === 'chapter' || overData.type === 'chapter-drop') {
+          ensureExpanded(overData.chapterId);
+          const targetChapter = structure.find((chapter) => chapter.id === overData.chapterId);
+          const insertIndex = targetChapter ? targetChapter.sections.length : 0;
+          moveSection(activeSectionId, overData.chapterId, insertIndex);
+        }
+      }
+    },
+    [ensureExpanded, moveChapter, moveSection, structure]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setIsDragProcess(false);
+      if (pendingStructureRef.current) {
+        persistStructure(pendingStructureRef.current);
+        pendingStructureRef.current = null;
+      }
+    },
+    [persistStructure]
+  );
+
+  const chapterIds = structure.map((chapter) => `chapter-${chapter.id}`);
 
   return (
-    <div>
-      <div className="hidden overflow-x-auto sm:block">
-        <table className="min-w-[720px] w-full text-sm">
-          <thead className="bg-white text-slate-600">
-            <tr>
-              <th className="w-28 px-3 py-2 text-left">キー</th>
-              <th className="px-3 py-2 text-left">コースコンテンツ名</th>
-              <th className="w-24 px-3 py-2 text-left">種別</th>
-              <th className="w-24 px-3 py-2 text-left">公開</th>
-              <th className="w-32 px-3 py-2 text-left">所要時間</th>
-            </tr>
-          </thead>
-          <tbody>
-            {chapters.map((ch) => (
-              <Fragment key={ch.id}>
-                <tr className="border-t border-brand-sky/20 bg-white">
-                  <td className="px-3 py-3 align-middle">
-                    <button
-                      aria-label={open[ch.id] ? 'セクションを閉じる' : 'セクションを開く'}
-                      className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-brand-sky/10 hover:bg-brand-sky/20 focus-ring"
-                      onClick={() => setOpen((st) => ({ ...st, [ch.id]: !st[ch.id] }))}
-                      title="展開/収納"
-                    >
-                      {open[ch.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    </button>
-                    <span className="font-medium">{ch.chapter_sort_key}</span>
-                  </td>
-                  <td className="px-3 py-3 align-middle">
-                    <Link
-                      href={`/admin/courses/${courseId}/chapters/${ch.id}`}
-                      className="underline decoration-white/20 hover:decoration-white"
-                    >
-                      <div className="flex items-center gap-2 font-medium">
-                        <Shapes size={16} className="opacity-80" />
-                        {ch.title}
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="px-3 py-3 align-middle">
-                    <span className="rounded-full bg-brand-sky/10 px-2 py-0.5 text-xs">チャプター</span>
-                  </td>
-                  <td className="px-3 py-3 align-middle">
-                    <span className="rounded-full bg-brand-sky/10 px-2 py-0.5 text-xs">
-                      {ch.status === 'published' ? '公開' : '非公開'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 align-middle">{chapterDuration(ch.id)} 分</td>
-                </tr>
-                {open[ch.id] &&
-                  (grouped.get(ch.id) || []).map((s) => (
-                    <tr key={s.id} className="border-t border-brand-sky/20">
-                      <td className="px-3 py-3 pl-9 align-middle">{s.section_sort_key}</td>
-                      <td className="px-3 py-3 align-middle">
-                        <Link
-                          href={`/admin/courses/${courseId}/sections/${s.id}`}
-                          className="underline decoration-white/20 hover:decoration-white"
-                        >
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <FileText size={16} className="opacity-80" />
-                            {s.title}
+    <div className="p-4">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={chapterIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-4">
+            {structure.map((chapter) => {
+              const sectionIds = chapter.sections.map((section) => `section-${section.id}`);
+              return (
+                <ChapterCard
+                  key={chapter.id}
+                  chapter={chapter}
+                  collapsed={!!collapsed[chapter.id]}
+                  toggle={() => toggleChapter(chapter.id)}
+                >
+                  {!collapsed[chapter.id] && (
+                    <div className="mt-4 space-y-3 border-l border-white/10 pl-4">
+                      <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
+                        <SectionDropZone chapterId={chapter.id} index={0} />
+                        {chapter.sections.length === 0 && (
+                          <div className="rounded-xl border border-dashed border-white/20 bg-white/5 px-3 py-2 text-sm text-[color:var(--muted)]">
+                            テストがまだありません。ここにドラッグするか、追加ボタンを押してください。
                           </div>
-                        </Link>
-                      </td>
-                      <td className="px-3 py-3 align-middle">
-                        <span className="rounded-full bg-brand-sky/10 px-2 py-0.5 text-xs">セクション</span>
-                      </td>
-                      <td className="px-3 py-3 align-middle">
-                        <span className="rounded-full bg-brand-sky/10 px-2 py-0.5 text-xs">
-                          {s.status === 'published' ? '公開' : '非公開'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 align-middle">{s.duration_min || 0} 分</td>
-                    </tr>
-                  ))}
-              </Fragment>
-            ))}
-            {!chapters.length && (
-              <tr>
-                <td className="px-3 py-6 text-slate-500" colSpan={5}>
-                  このコースにコンテンツはありません。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="space-y-4 sm:hidden">
-        {chapters.map((ch) => {
-          const sectionsForChapter = grouped.get(ch.id) || [];
-          return (
-            <div
-              key={`mobile-${ch.id}`}
-              className="rounded-2xl border border-brand-sky/30 bg-white/60 p-4 shadow-sm"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-slate-500">チャプター {ch.chapter_sort_key}</p>
-                  <Link
-                    href={`/admin/courses/${courseId}/chapters/${ch.id}`}
-                    className="mt-1 inline-flex items-center gap-2 text-base font-semibold text-slate-800 underline decoration-transparent hover:decoration-brand focus-ring"
-                  >
-                    <Shapes size={16} className="opacity-70" />
-                    {ch.title}
-                  </Link>
-                </div>
-                <span className="rounded-full bg-brand-sky/10 px-2 py-0.5 text-xs text-brand">
-                  {ch.status === 'published' ? '公開' : '非公開'}
-                </span>
-              </div>
-              <p className="mt-3 text-xs text-slate-500">
-                公開済み合計: {chapterDuration(ch.id)} 分
-              </p>
-              <div className="mt-3 space-y-2">
-                {sectionsForChapter.length ? (
-                  sectionsForChapter.map((s) => (
-                    <Link
-                      key={s.id}
-                      href={`/admin/courses/${courseId}/sections/${s.id}`}
-                      className="block rounded-xl border border-brand-sky/20 bg-white/80 p-3 text-sm transition hover:border-brand-sky/40 hover:bg-white focus-ring"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold text-slate-500">
-                            セクション {s.section_sort_key}
-                          </p>
-                          <p className="mt-1 font-medium text-slate-800">{s.title}</p>
-                        </div>
-                        <span className="rounded-full bg-brand-sky/10 px-2 py-0.5 text-xs text-brand">
-                          {s.status === 'published' ? '公開' : '非公開'}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-xs text-slate-500">目安: {s.duration_min || 0} 分</p>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="rounded-xl border border-dashed border-brand-sky/30 p-3 text-center text-xs text-slate-500">
-                    このチャプターにセクションはありません。
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        {!chapters.length && (
-          <div className="rounded-2xl border border-dashed border-brand-sky/30 p-4 text-center text-sm text-slate-500">
-            このコースにコンテンツはありません。
+                        )}
+                        {chapter.sections.map((section, index) => (
+                          <div key={section.id} className="space-y-1">
+                            <SectionRow section={section} courseId={courseId} />
+                            <SectionDropZone chapterId={chapter.id} index={index + 1} />
+                          </div>
+                        ))}
+                      </SortableContext>
+                      <ChapterDropZone chapterId={chapter.id} />
+                    </div>
+                  )}
+                </ChapterCard>
+              );
+            })}
           </div>
-        )}
+        </SortableContext>
+      </DndContext>
+      <div className="mt-4 text-xs text-[color:var(--muted)]">
+        {isSaving ? saveMessage : saveMessage || 'ドラッグ＆ドロップでチャプター／テストの並び順を変更できます。'}
       </div>
     </div>
   );

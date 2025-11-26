@@ -1,10 +1,9 @@
 "use client";
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Menu, CircleHelp } from 'lucide-react';
-import ThemeToggle from '@/components/theme/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
 import Logo from '@/icon/zerocode-logo.svg';
 
@@ -30,6 +29,7 @@ export default function Header({
   const [activeIndex, setActiveIndex] = useState(0);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number }>({ top: 0, right: 16 });
 
   const menuRef = useRef<HTMLDivElement | null>(null);
   const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -117,6 +117,19 @@ export default function Header({
     };
   }, [menuOpen]);
 
+  const updateMenuPosition = useCallback(() => {
+    if (!avatarButtonRef.current || typeof window === 'undefined') return;
+    const rect = avatarButtonRef.current.getBoundingClientRect();
+    const safeAreaTop =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-top')) || 0;
+    const offsetY = 12;
+    const right = Math.max(window.innerWidth - rect.right - 16, 16);
+    setMenuPosition({
+      top: rect.bottom + offsetY + safeAreaTop,
+      right,
+    });
+  }, []);
+
   useEffect(() => {
     if (!menuOpen) return;
     itemRefs.current = [];
@@ -125,7 +138,12 @@ export default function Header({
       menuRef.current?.focus();
       itemRefs.current[0]?.focus();
     });
-  }, [menuOpen]);
+    updateMenuPosition();
+    window.addEventListener('resize', updateMenuPosition);
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+    };
+  }, [menuOpen, updateMenuPosition]);
 
   const handleMenuKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (!menuOpen) return;
@@ -191,7 +209,6 @@ export default function Header({
           <Image src={Logo} alt="zerocode ロゴ" className="h-8 w-auto object-contain" priority />
         </Link>
         <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
           <button type="button" className={iconButtonClass} aria-label="ヘルプセンター">
             <CircleHelp size={18} />
           </button>
@@ -225,7 +242,8 @@ export default function Header({
                 role="menu"
                 tabIndex={-1}
                 onKeyDown={handleMenuKey}
-                className="absolute right-0 mt-3 w-72 max-h-[70vh] overflow-y-auto rounded-2xl bg-[var(--panel)] p-2 text-[var(--text)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/10 focus:outline-none"
+                style={{ top: menuPosition.top, right: menuPosition.right }}
+                className="fixed z-50 w-72 max-h-[70vh] overflow-y-auto rounded-2xl bg-[var(--panel)] p-2 text-[var(--text)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/10 focus:outline-none"
               >
                 <div className="divide-y divide-white/5">
                   {menuItems.map((item, index) => (

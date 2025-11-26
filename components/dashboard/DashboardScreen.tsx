@@ -68,7 +68,7 @@ type TimelineData = {
 
 const RUNNER_EMOJI = '🏃‍♂️';
 const TIMELINE_INTERVAL_DAYS = 1;
-const DEFAULT_PROGRAM_LENGTH_DAYS = 14;
+const DEFAULT_PROGRAM_LENGTH_DAYS = 7;
 const MS_PER_DAY = 86_400_000;
 const MIN_TIMELINE_STEP_WIDTH = 56;
 const MIN_TIMELINE_WIDTH = 320;
@@ -179,6 +179,7 @@ function Calendar({
               const isBeforeMin = minDate ? dateKey < minDate : false;
               const isAfterMax = maxDate ? dateKey > maxDate : false;
               const isDisabled = isBeforeMin || isAfterMax;
+              const inProgramRange = !isDisabled;
               const highlightToday = isToday && !isSelected && !isDisabled;
               const classNames = [
                 'relative flex h-12 flex-col items-center justify-center rounded-lg border text-sm transition',
@@ -189,6 +190,8 @@ function Calendar({
                 );
               } else if (isSelected) {
                 classNames.push('border-brand bg-brand/10 text-brand');
+              } else if (inProgramRange) {
+                classNames.push('border-brand/10 bg-brand/5 text-brand');
               } else {
                 classNames.push(
                   'border-transparent text-slate-700 hover:border-brand/40 hover:bg-brand/5',

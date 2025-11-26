@@ -64,18 +64,18 @@ export default async function CourseDetailPage({ params, searchParams }: { param
           {/* Preview removed as requested */}
 
           {/* Basic info: includes key, title, description, media, publish status, duration */}
-          <div className="rounded-2xl border border-brand-sky/20 bg-white p-4 space-y-6">
+          <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-1)] p-4 shadow-[0_15px_35px_rgba(0,0,0,0.35)] space-y-6">
             <h2 className="font-medium">基本情報</h2>
 
             {/* Key + Title */}
             <form action={saveMeta} className="grid gap-4 max-w-xl">
               <label className="grid gap-1">
-                <span className="text-sm text-slate-600">キー（表示順）</span>
-                <input name="sort_key" type="number" min={1} step={1} defaultValue={course.sort_key} className="rounded-xl bg-brand-sky/10 px-3 py-2 focus-ring" />
+                <span className="text-sm text-[color:var(--muted)]">キー（表示順）</span>
+                <input name="sort_key" type="number" min={1} step={1} defaultValue={course.sort_key} className="rounded-xl bg-white/5 px-3 py-2 text-[color:var(--text)] focus-ring" />
               </label>
               <label className="grid gap-1">
-                <span className="text-sm text-slate-600">コース名</span>
-                <input name="title" defaultValue={course.title} required maxLength={120} className="rounded-xl bg-brand-sky/10 px-3 py-2 focus-ring" />
+                <span className="text-sm text-[color:var(--muted)]">コース名</span>
+                <input name="title" defaultValue={course.title} required maxLength={120} className="rounded-xl bg-white/5 px-3 py-2 text-[color:var(--text)] focus-ring" />
               </label>
               <div>
                 <button type="submit" className="rounded-xl bg-brand-yellow px-4 py-2 text-brand focus-ring">基本情報を保存</button>
@@ -84,9 +84,9 @@ export default async function CourseDetailPage({ params, searchParams }: { param
 
             {/* Course description editor */}
             <div>
-              <h3 className="mb-2 text-sm text-slate-600">コース説明</h3>
+              <h3 className="mb-2 text-sm text-[color:var(--muted)]">コース説明</h3>
               <form action={saveDesc} className="grid gap-3">
-                <textarea name="description_md" defaultValue={course.description_md || ''} rows={10} className="rounded-xl bg-brand-sky/10 px-3 py-2 focus-ring" />
+                <textarea name="description_md" defaultValue={course.description_md || ''} rows={10} className="rounded-xl bg-white/5 px-3 py-2 text-[color:var(--text)] focus-ring" />
                 <div>
                   <button type="submit" className="rounded-xl bg-brand-yellow px-4 py-2 text-brand focus-ring">説明を保存</button>
                 </div>
@@ -96,20 +96,20 @@ export default async function CourseDetailPage({ params, searchParams }: { param
             {/* Media import */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm text-slate-600 mb-2">サムネイル画像</h3>
+                <h3 className="text-sm text-[color:var(--muted)] mb-2">サムネイル画像</h3>
                 <UploadThumbnail courseId={course.id} url={course.thumbnail_url || null} />
               </div>
               <div>
-                <h3 className="text-sm text-slate-600 mb-2">コース概要動画（任意）</h3>
+                <h3 className="text-sm text-[color:var(--muted)] mb-2">コース概要動画（任意）</h3>
                 <UploadOverviewVideo courseId={course.id} url={course.overview_video_url || null} />
               </div>
             </div>
 
             {/* Publish status (editable dropdown) */}
             <div className="grid gap-2 max-w-xs">
-              <span className="text-sm text-slate-600">公開ステータス</span>
+              <span className="text-sm text-[color:var(--muted)]">公開ステータス</span>
               <form action={saveStatus} className="flex items-center gap-2">
-                <select name="status" defaultValue={course.status} className="rounded-xl bg-brand-sky/10 px-3 py-2 focus-ring text-sm">
+                <select name="status" defaultValue={course.status} className="rounded-xl bg-white/5 px-3 py-2 text-sm text-[color:var(--text)] focus-ring">
                   <option value="draft">非公開（draft）</option>
                   <option value="published">公開（published）</option>
                 </select>
@@ -119,27 +119,27 @@ export default async function CourseDetailPage({ params, searchParams }: { param
 
           {/* Duration */}
           <div className="grid gap-1">
-            <span className="text-sm text-slate-600">所要時間（公開中の合計）</span>
-            <div className="text-slate-600">{totalDuration} 分</div>
+            <span className="text-sm text-[color:var(--muted)]">所要時間（公開中の合計）</span>
+            <div className="text-[color:var(--muted)]">{totalDuration} 分</div>
           </div>
 
             {/* Delete/Restore course */}
             <div className="pt-2 flex items-center gap-2">
               {!course?.deleted_at ? (
                 <form action={doSoftDeleteCourse}>
-                  <button type="submit" className="rounded-xl bg-brand-sky/10 px-3 py-2 text-sm focus-ring">コースを削除</button>
+                  <button type="submit" className="rounded-xl bg-white/5 px-3 py-2 text-sm focus-ring">コースを削除</button>
                 </form>
               ) : (
                 <form action={doRestoreCourse}>
-                  <button type="submit" className="rounded-xl bg-brand-sky/10 px-3 py-2 text-sm focus-ring">コースを復元</button>
+                  <button type="submit" className="rounded-xl bg-white/5 px-3 py-2 text-sm focus-ring">コースを復元</button>
                 </form>
               )}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-brand-sky/20 bg-white p-0">
-            <div className="flex items-center justify-between px-4 py-3">
-              <h3 className="font-medium">コースコンテンツ一覧</h3>
+          <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-1)] p-0 shadow-[0_15px_35px_rgba(0,0,0,0.35)]">
+            <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+              <h3 className="font-medium text-[color:var(--text)]">コースコンテンツ一覧</h3>
               <OpenAddContentButton />
             </div>
             <ContentTable
@@ -163,7 +163,7 @@ export default async function CourseDetailPage({ params, searchParams }: { param
           <AddContentModal courseId={course.id} chapters={(chapters || []).map((c: any) => ({ id: c.id, title: c.title }))} />
         </div>
       ) : (
-        <div className="rounded-xl border border-brand-sky/20 bg-white p-4">コースが見つかりませんでした。</div>
+        <div className="rounded-xl border border-white/10 bg-[color:var(--surface-1)] p-4 text-[color:var(--text)]">コースが見つかりませんでした。</div>
       )}
     </div>
   );

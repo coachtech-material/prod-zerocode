@@ -7,11 +7,25 @@ type Chapter = { id: string; title: string };
 export default function AddContentModal({ courseId, chapters }: { courseId: string; chapters: Chapter[] }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<'chapter' | 'section'>('chapter');
+  const [sectionChapter, setSectionChapter] = useState('');
   useEffect(() => {
-    const handler = () => setOpen(true);
-    window.addEventListener('add-content:open', handler);
-    return () => window.removeEventListener('add-content:open', handler);
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ chapterId?: string }>).detail;
+      if (detail?.chapterId) {
+        setKind('section');
+        setSectionChapter(detail.chapterId);
+      }
+      setOpen(true);
+    };
+    window.addEventListener('add-content:open', handler as EventListener);
+    return () => window.removeEventListener('add-content:open', handler as EventListener);
   }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setSectionChapter('');
+    }
+  }, [open]);
 
   const chapterOptions = useMemo(() => chapters, [chapters]);
 
@@ -54,7 +68,13 @@ export default function AddContentModal({ courseId, chapters }: { courseId: stri
               <form action={actionSection} className="grid gap-3">
                 <label className="grid gap-1">
                   <span className="text-sm text-slate-600">所属チャプター</span>
-                  <select name="chapter_id" required className="rounded-xl bg-brand-sky/10 px-3 py-2 focus-ring">
+                  <select
+                    name="chapter_id"
+                    required
+                    className="rounded-xl bg-brand-sky/10 px-3 py-2 focus-ring"
+                    value={sectionChapter}
+                    onChange={(event) => setSectionChapter(event.target.value)}
+                  >
                     <option value="">選択してください</option>
                     {chapterOptions.map((c) => (
                       <option key={c.id} value={c.id}>{c.title}</option>

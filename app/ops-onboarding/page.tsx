@@ -3,7 +3,6 @@ import InviteSessionHandler from '@/components/onboarding/InviteSessionHandler';
 import OpsOnboardingForm from '@/components/onboarding/OpsOnboardingForm';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireRole } from '@/lib/auth/requireRole';
-import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,9 +15,6 @@ export default async function OpsOnboardingPage() {
   if (!user) {
     return (
       <div className="relative mx-auto flex min-h-[60vh] w-full max-w-xl flex-col items-center justify-center gap-6 p-6 text-center">
-        <div className="absolute right-4 top-4 z-20">
-          <ThemeToggle variant="secondary" />
-        </div>
         <InviteSessionHandler redirectPath="/ops-onboarding" />
         <h1 className="text-2xl font-semibold text-[color:var(--text)]">招待リンクを確認しています...</h1>
         <p className="text-sm text-[color:var(--muted)]">
@@ -41,9 +37,6 @@ export default async function OpsOnboardingPage() {
 
   return (
     <div className="relative mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 px-6 py-12">
-      <div className="absolute right-4 top-4 z-20">
-        <ThemeToggle variant="secondary" />
-      </div>
       <InviteSessionHandler redirectPath="/ops-onboarding" />
       <header className="space-y-3 text-center">
         <h1 className="text-3xl font-semibold text-[color:var(--text)]">運営アカウントの初期設定</h1>

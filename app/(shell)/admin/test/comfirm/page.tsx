@@ -50,7 +50,7 @@ export default async function AdminConfirmManagePage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumbs */}
-      <nav aria-label="breadcrumbs" className="text-sm text-slate-500">
+      <nav aria-label="breadcrumbs" className="text-sm text-[color:var(--muted)]">
         <ol className="flex items-center gap-2">
           <li>
             <Link href="/admin" className="underline decoration-white/20 hover:decoration-white focus-ring rounded">
@@ -58,27 +58,27 @@ export default async function AdminConfirmManagePage() {
             </Link>
           </li>
           <li aria-hidden>›</li>
-          <li aria-current="page" className="text-slate-700 truncate max-w-[60ch]">
+          <li aria-current="page" className="max-w-[60ch] truncate text-[color:var(--text)]">
             確認テスト管理
           </li>
         </ol>
       </nav>
       <h1 className="text-xl font-semibold">確認テスト管理</h1>
-      <p className="text-sm text-slate-600">各コース / チャプターごとの確認テスト一覧（作成・編集の動線は一旦非表示）。</p>
+      <p className="text-sm text-[color:var(--muted)]">各コース / チャプターごとの確認テスト一覧（作成・編集の動線は一旦非表示）。</p>
 
       <div className="space-y-3">
         {courses.map((c) => (
-          <div key={c.id} className="rounded-2xl border border-brand-sky/20 bg-white">
-            <div className="flex items-center justify-between border-b border-brand-sky/20 p-3">
+          <div key={c.id} className="rounded-2xl border border-white/10 bg-[color:var(--surface-1)] shadow-[0_15px_35px_rgba(0,0,0,0.35)]">
+            <div className="flex items-center justify-between border-b border-white/5 p-3">
               <div>
-                <div className="text-base font-medium">{c.title}</div>
-                <div className="text-xs text-slate-500">コース内テスト: {testCountCourse(c.id)} 件</div>
+                <div className="text-base font-medium text-[color:var(--text)]">{c.title}</div>
+                <div className="text-xs text-[color:var(--muted)]">コース内テスト: {testCountCourse(c.id)} 件</div>
               </div>
             </div>
 
             <div className="p-3 space-y-3">
               {/* チャプター */}
-              <div className="text-sm text-slate-600 mb-1">チャプター</div>
+              <div className="mb-1 text-sm text-[color:var(--muted)]">チャプター</div>
               <div className="space-y-2">
                 {(byCourse.get(c.id) || []).map((ch) => (
                   <ChapterRow
@@ -92,14 +92,14 @@ export default async function AdminConfirmManagePage() {
                   />
                 ))}
                 {!(byCourse.get(c.id) || []).length && (
-                  <div className="rounded-xl border border-brand-sky/20 bg-white p-3 text-sm text-slate-500">チャプターがありません</div>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-[color:var(--muted)]">チャプターがありません</div>
                 )}
               </div>
             </div>
           </div>
         ))}
         {!courses.length && (
-          <div className="rounded-xl border border-brand-sky/20 bg-white p-4 text-sm text-slate-600">コースがありません。先にコースを作成してください。</div>
+          <div className="rounded-xl border border-white/10 bg-[color:var(--surface-1)] p-4 text-sm text-[color:var(--muted)]">コースがありません。先にコースを作成してください。</div>
         )}
       </div>
     </div>

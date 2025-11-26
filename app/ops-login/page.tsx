@@ -4,7 +4,6 @@ import type { Metadata } from 'next';
 import PasswordLoginForm from '@/components/auth/PasswordLoginForm';
 import { signInOps } from '@/lib/auth/actions';
 import Logo from '@/icon/zerocode-logo.svg';
-import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export const metadata: Metadata = {
   title: '管理者ログイン | zerocode',
@@ -21,9 +20,6 @@ export default function AdminLoginPage({ searchParams }: { searchParams: SearchP
 
   return (
     <div className="relative min-h-screen bg-[color:var(--color-surface-strong)]">
-      <div className="absolute right-4 top-4 z-20">
-        <ThemeToggle variant="secondary" />
-      </div>
       <div className="grid min-h-screen w-full grid-cols-1 overflow-hidden lg:grid-cols-[minmax(320px,0.38fr)_minmax(360px,0.62fr)]">
         <div className="relative flex min-h-[240px] flex-col justify-between bg-[color:var(--admin-hero)] px-8 py-12 text-white sm:px-10 lg:px-12">
           <Link href="/" className="inline-flex items-center" aria-label="ホームへ戻る">

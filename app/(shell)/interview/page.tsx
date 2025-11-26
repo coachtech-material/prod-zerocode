@@ -8,11 +8,11 @@ export default function InterviewBookingPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 lg:px-0 lg:py-12">
       <div className="mb-8 space-y-3 text-center">
-        <span className="inline-flex items-center justify-center rounded-full bg-brand-blue/10 px-4 py-1 text-sm font-semibold text-brand-blue">
+        <span className="inline-flex items-center justify-center rounded-full bg-brand-blue/10 px-4 py-1 text-sm font-semibold text-white">
           面談サポート
         </span>
-        <h1 className="text-3xl font-bold text-slate-900">面談予約</h1>
-        <p className="mx-auto max-w-5xl text-sm text-slate-600">
+        <h1 className="text-3xl font-bold text-white">面談予約</h1>
+        <p className="mx-auto max-w-5xl text-sm text-[color:var(--muted)]">
           受講修了時に改めて学習やキャリアに関するご相談を承ります。以下のカレンダーからご都合の良い日時をお選びください。
         </p>
       </div>

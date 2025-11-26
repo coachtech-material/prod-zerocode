@@ -10,6 +10,9 @@ export default function LayoutShell({ role, children }: { role: 'user' | 'staff'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarMobileRef = useRef<HTMLDivElement | null>(null);
   const sidebarToggleRef = useRef<HTMLButtonElement>(null);
+  const swipeStartXRef = useRef<number | null>(null);
+  const swipeStartTimeRef = useRef<number>(0);
+  const lastWheelSwipeRef = useRef<number>(0);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -48,6 +51,19 @@ export default function LayoutShell({ role, children }: { role: 'user' | 'staff'
 
   const openMobileSidebar = useCallback(() => {
     setMobileSidebarOpen(true);
+  }, []);
+
+  useEffect(() => {
+    const body = document.body;
+    const html = document.documentElement;
+    const prevBodyOverflow = body.style.overflow;
+    const prevHtmlOverflow = html.style.overflow;
+    body.style.overflow = 'hidden';
+    html.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevBodyOverflow;
+      html.style.overflow = prevHtmlOverflow;
+    };
   }, []);
 
   useEffect(() => {
@@ -101,10 +117,57 @@ export default function LayoutShell({ role, children }: { role: 'user' | 'staff'
     };
   }, [closeMobileSidebar, mobileSidebarOpen]);
 
+  useEffect(() => {
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      swipeStartXRef.current = event.touches[0].clientX;
+      swipeStartTimeRef.current = Date.now();
+    };
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (swipeStartXRef.current == null) return;
+      const deltaX = event.changedTouches[0].clientX - swipeStartXRef.current;
+      const duration = Date.now() - swipeStartTimeRef.current;
+      swipeStartXRef.current = null;
+      swipeStartTimeRef.current = 0;
+      const absX = Math.abs(deltaX);
+      if (absX < 80 || duration > 500) return;
+      if (deltaX > 0) {
+        window.history.back();
+      } else {
+        window.history.forward();
+      }
+    };
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey || Math.abs(event.deltaX) < 120) return;
+      if (Math.abs(event.deltaX) < Math.abs(event.deltaY)) return;
+      const now = Date.now();
+      if (now - lastWheelSwipeRef.current < 800) return;
+      lastWheelSwipeRef.current = now;
+      if (event.deltaX > 0) {
+        window.history.forward();
+      } else {
+        window.history.back();
+      }
+    };
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   const mainPaddingClass = useMemo(() => (sidebarExpanded ? 'md:pl-64' : 'md:pl-14'), [sidebarExpanded]);
 
   return (
-    <div className="flex min-h-screen w-full bg-[var(--bg)] text-[var(--text)]">
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-[var(--bg)] text-[var(--text)]">
       {mobileSidebarOpen && (
         <div
           role="presentation"
@@ -120,14 +183,14 @@ export default function LayoutShell({ role, children }: { role: 'user' | 'staff'
         onMobileClose={closeMobileSidebar}
         mobileRef={sidebarMobileRef}
       />
-      <div className={['flex min-h-screen flex-1 flex-col', mainPaddingClass].join(' ')}>
+      <div className={['flex h-full min-h-0 flex-1 flex-col', mainPaddingClass].join(' ')}>
         <Header
           mobileSidebarOpen={mobileSidebarOpen}
           onMobileSidebarToggle={mobileSidebarOpen ? closeMobileSidebar : openMobileSidebar}
           sidebarToggleRef={sidebarToggleRef}
         />
         <main
-          className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(24px+var(--safe-area-bottom,0px))] sm:px-5 md:px-6 lg:px-8"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-[calc(24px+var(--safe-area-bottom,0px))] sm:px-5 md:px-6 lg:px-8"
           style={{ paddingTop: 'calc(56px + var(--safe-area-top, 0px))' }}
           data-scroll-container="layout-shell-main"
         >

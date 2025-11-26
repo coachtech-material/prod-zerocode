@@ -70,7 +70,7 @@
   --color-primary-button: var(--brand-strong);
   --color-outline: rgba(255, 255, 255, 0.12);
   --user-hero: var(--surface-2);
-  --admin-hero: var(--surface-2);
+  --admin-hero: #2ea4ff;
   --safe-area-top: env(safe-area-inset-top);
   --safe-area-bottom: env(safe-area-inset-bottom);
 }
@@ -127,6 +127,10 @@ div,
 p {
   overflow-wrap: anywhere;
   word-break: keep-all;
+}
+
+[data-scroll-container='layout-shell-main'] {
+  overscroll-behavior: contain;
 }
 
 /* Scrollbar */
@@ -235,6 +239,46 @@ textarea::placeholder {
 .surface-menu {
   background-color: var(--surface-3);
   box-shadow: var(--shadow-2);
+}
+
+.bg-white {
+  background-color: var(--surface-1) !important;
+  color: var(--text);
+}
+
+.bg-white\/70 {
+  background-color: rgba(15, 43, 68, 0.7) !important;
+  color: var(--text);
+}
+
+.bg-white\/90 {
+  background-color: rgba(15, 43, 68, 0.9) !important;
+  color: var(--text);
+}
+
+.text-slate-800,
+.text-slate-700 {
+  color: var(--text) !important;
+}
+
+.text-slate-600,
+.text-slate-500 {
+  color: var(--muted) !important;
+}
+
+.text-slate-400 {
+  color: rgba(159, 178, 195, 0.7) !important;
+}
+
+.border-slate-100,
+.border-slate-200,
+.border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.bg-slate-50,
+.bg-slate-100 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .text-muted {
