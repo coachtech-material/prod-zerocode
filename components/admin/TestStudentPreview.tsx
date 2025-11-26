@@ -35,36 +35,41 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
   const [fixResult, setFixResult] = useState<null | { correct: boolean; correctIdx: number | null }>(null);
   const [expHtml, setExpHtml] = useState('');
   const [orderSelection, setOrderSelection] = useState<string[]>([]);
+  const [lastResultOk, setLastResultOk] = useState<boolean | null>(null);
 
   const notifyScore = (ok: boolean) => {
     try { onScored?.(ok); } catch {}
     try { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('app:test:scored', { detail: { ok } })); } catch {}
   };
+  const reportScore = (ok: boolean) => {
+    setLastResultOk(ok);
+    notifyScore(ok);
+  };
 
   const ResultCard = ({ ok }: { ok: boolean }) => (
     <div
       className={[
-        'mt-3 rounded-2xl border p-4 shadow-lg',
+        'mt-3 rounded-2xl border p-4 shadow-lg text-white',
         ok
-          ? 'border-emerald-400/40 bg-gradient-to-br from-emerald-600/30 via-emerald-500/20 to-emerald-400/20'
-          : 'border-rose-400/40 bg-gradient-to-br from-rose-600/30 via-rose-500/20 to-rose-400/20'
+          ? 'border-emerald-200/60 bg-gradient-to-br from-emerald-500/80 via-emerald-500/60 to-emerald-400/50'
+          : 'border-rose-200/60 bg-gradient-to-br from-rose-500/80 via-rose-500/60 to-rose-400/50'
       ].join(' ')}
     >
       <div className="flex items-center gap-3">
         <div
           className={[
-            'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-2xl',
-            ok ? 'bg-emerald-500/30 text-emerald-700' : 'bg-rose-500/30 text-rose-700'
+            'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-2xl text-white',
+            ok ? 'bg-emerald-400/60' : 'bg-rose-400/60'
           ].join(' ')}
           aria-hidden
         >
           {ok ? '🎉' : '💡'}
         </div>
         <div className="min-w-0">
-          <div className={['font-bold leading-tight', ok ? 'text-emerald-700' : 'text-rose-600', 'text-xl sm:text-2xl'].join(' ')}>
+          <div className="text-xl font-bold leading-tight sm:text-2xl">
             {ok ? '正解！' : '不正解'}
           </div>
-          <div className="mt-1 text-sm text-slate-700/90">
+          <div className="mt-1 text-sm text-white">
             {ok ? 'よくできました！' : 'もう一度チャレンジしましょう'}
           </div>
         </div>
@@ -80,6 +85,7 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
     setSelectedFixIdx(null);
     setSelectedBlanks({});
     setOrderSelection([]);
+    setLastResultOk(null);
   };
 
   useEffect(() => {
@@ -100,6 +106,24 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
   const items = (spec?.items || []) as Array<any>;
   const correctOrder = (spec?.correct_order || []) as Array<string>;
   const displayOrder = (spec?.display_order || []) as Array<string>;
+  const ExplanationBlock = () => (
+    <div className="mt-3 rounded-xl border border-white/15 bg-white/5 p-3 text-white">
+      <div className="mb-2 text-xs font-semibold text-white">💡 解説</div>
+      {expHtml ? (
+        <div
+          className="prose max-w-none"
+          style={{
+            '--tw-prose-headings': '#f8fafc',
+            '--tw-prose-links': '#93c5fd',
+            '--tw-prose-bold': '#f8fafc',
+          } as React.CSSProperties}
+          dangerouslySetInnerHTML={{ __html: expHtml }}
+        />
+      ) : (
+        <div className="text-sm text-white">解説は設定されていません。</div>
+      )}
+    </div>
+  );
 
   // Choices are rendered as plain text (per previous spec)
 
@@ -162,31 +186,17 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
           )}
         </section>
 
-        {expHtml && (
-          <section className="min-w-0 rounded-2xl border border-white/10 bg-white/10 p-4 text-[color:var(--text)] shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
-            <div className="text-xs text-[color:var(--muted)] mb-2">解説</div>
-            <div
-              className="prose max-w-none"
-              style={{
-                '--tw-prose-headings': 'var(--text)',
-                '--tw-prose-links': '#58A6FF',
-                '--tw-prose-bold': 'var(--text)',
-              } as React.CSSProperties}
-              dangerouslySetInnerHTML={{ __html: expHtml }}
-            />
-          </section>
-        )}
       </div>
 
-      <section className="min-w-0 rounded-2xl border border-white/10 bg-white p-4 text-slate-800 shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
-        <div className="text-xs text-slate-500 mb-2">回答欄（プレビュー）</div>
+      <section className="min-w-0 rounded-2xl border border-white/10 bg-white p-4 text-slate-900 shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+        <div className="mb-2 text-xs font-semibold text-slate-800">回答欄（プレビュー）</div>
 
         {mode === 'fill_blank' && (
           <div className="space-y-3">
-            {blanks.length === 0 && <div className="text-sm text-slate-500">BLANKが未設定です。</div>}
+            {blanks.length === 0 && <div className="text-sm text-slate-800">BLANKが未設定です。</div>}
             {blanks.map((b, i) => (
               <div key={i} className="grid gap-2 rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                <div className="text-sm font-semibold text-slate-700">{b.prompt || b.key}</div>
+                <div className="text-sm font-semibold text-slate-800">{b.prompt || b.key}</div>
                 {b.choices?.length ? (
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {b.choices.map((c: string, ci: number) => {
@@ -200,7 +210,7 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                             'text-left rounded-xl border px-3 py-2 text-sm transition',
                             sel
                               ? 'border-violet-500/40 bg-violet-500/15 text-violet-900'
-                              : 'border-slate-200 bg-white text-slate-600 hover:border-brand hover:text-brand',
+                              : 'border-slate-200 bg-white text-slate-800 hover:border-brand hover:text-brand',
                           ].join(' ')}
                         >
                           {c}
@@ -224,7 +234,7 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                       <span className="text-rose-500">不正解</span>
                     )}
                     {!blankResults[b.key] && b.correct && (
-                      <span className="ml-2 text-slate-600">
+                      <span className="ml-2 text-slate-800">
                         正解: <code className="text-slate-800">{String(b.correct)}</code>
                       </span>
                     )}
@@ -236,7 +246,7 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
               {submitted && (
                 <button
                   type="button"
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:border-brand hover:text-brand"
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-brand hover:text-brand"
                   onClick={resetAttempt}
                 >
                   再チャレンジ
@@ -253,18 +263,19 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                     res[b.key] = !!corr && ans.length > 0 ? ans === corr : false;
                   }
                   setBlankResults(res);
+                  const blanksOk = Object.values(res).every(Boolean);
                   if (choices.length) {
                     const correctIdx = choices.findIndex((x: any) => !!x.is_correct);
-                    const ok = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
+                    const choiceOk = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
                     setFixResult({
-                      correct: correctIdx >= 0 && !!ok,
+                      correct: correctIdx >= 0 && !!choiceOk,
                       correctIdx: correctIdx >= 0 ? correctIdx : null,
                     });
-                    notifyScore(!!ok && correctIdx >= 0 && Object.values(res).every(Boolean));
+                    const overallOk = correctIdx >= 0 && !!choiceOk && blanksOk;
+                    reportScore(overallOk);
                   } else {
                     setFixResult(null);
-                    const ok = Object.values(res).every(Boolean);
-                    notifyScore(ok);
+                    reportScore(blanksOk);
                   }
                   setSubmitted(true);
                 }}
@@ -273,17 +284,20 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
               </button>
             </div>
             {submitted && (
-              <ResultCard ok={blanks.length > 0 && (blanks || []).every((b: any) => !!blankResults[b.key])} />
+              <>
+                <ResultCard ok={blanks.length > 0 && (blanks || []).every((b: any) => !!blankResults[b.key])} />
+                {lastResultOk === false && <ExplanationBlock />}
+              </>
             )}
           </div>
         )}
 
         {mode === 'semantic_fill' && (
           <div className="space-y-3">
-            {blanks.length === 0 && <div className="text-sm text-slate-500">BLANKが未設定です。</div>}
+            {blanks.length === 0 && <div className="text-sm text-slate-800">BLANKが未設定です。</div>}
             {blanks.map((b, i) => (
               <div key={i} className="grid gap-2">
-                <div className="text-sm text-slate-700">{b.key}</div>
+                <div className="text-sm text-slate-800">{b.key}</div>
                 {b.choices?.length ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {b.choices.map((c: string, ci: number) => {
@@ -297,7 +311,7 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                             'text-left rounded-xl border px-3 py-2 text-sm',
                             sel
                               ? 'border-violet-500/40 bg-violet-500/20 text-violet-100'
-                              : 'border-brand-sky/20 bg-white text-slate-600 hover:bg-brand-sky/10'
+                              : 'border-brand-sky/20 bg-white text-slate-800 hover:bg-brand-sky/10'
                           ].join(' ')}
                         >
                           {c}
@@ -316,12 +330,12 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                 {submitted && (
                   <div className="text-xs">
                     {blankResults[b.key] ? (
-                      <span className="text-emerald-300">正解</span>
+                      <span className="text-emerald-500">正解</span>
                     ) : (
-                      <span className="text-red-600">不正解</span>
+                      <span className="text-red-500">不正解</span>
                     )}
                     {!blankResults[b.key] && (b.correct != null && String(b.correct).length > 0) && (
-                      <span className="ml-2 text-slate-600">正解: <code className="text-slate-800">{String(b.correct)}</code></span>
+                      <span className="ml-2 text-slate-800">正解: <code className="text-slate-800">{String(b.correct)}</code></span>
                     )}
                   </div>
                 )}
@@ -340,15 +354,16 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                       res[b.key] = !!corr && ans.length > 0 ? ans === corr : false;
                     }
                     setBlankResults(res);
+                    const blanksOk = Object.values(res).every(Boolean);
                     if (choices.length) {
                       const correctIdx = choices.findIndex((x:any)=> !!x.is_correct);
-                      const ok = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
-                      setFixResult({ correct: correctIdx >= 0 && !!ok, correctIdx: correctIdx >= 0 ? correctIdx : null });
-                      notifyScore(!!ok && correctIdx >= 0 && Object.values(res).every(Boolean));
+                      const choiceOk = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
+                      setFixResult({ correct: correctIdx >= 0 && !!choiceOk, correctIdx: correctIdx >= 0 ? correctIdx : null });
+                      const overallOk = correctIdx >= 0 && !!choiceOk && blanksOk;
+                      reportScore(overallOk);
                     } else {
                       setFixResult(null);
-                      const ok = Object.values(res).every(Boolean);
-                      notifyScore(ok);
+                      reportScore(blanksOk);
                     }
                     setSubmitted(true);
                   }}
@@ -356,14 +371,17 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
               </div>
             )}
             {submitted && (
-              <ResultCard ok={blanks.length > 0 && (blanks || []).every((b:any) => !!blankResults[b.key])} />
+              <>
+                <ResultCard ok={blanks.length > 0 && (blanks || []).every((b:any) => !!blankResults[b.key])} />
+                {lastResultOk === false && <ExplanationBlock />}
+              </>
             )}
           </div>
         )}
 
         {mode === 'fix' && (
           <div className="space-y-2">
-            {choices.length === 0 && <div className="text-sm text-slate-500">選択肢が未設定です。</div>}
+            {choices.length === 0 && <div className="text-sm text-slate-800">選択肢が未設定です。</div>}
             <div className="grid grid-cols-1 gap-2">
               {choices.map((c, i) => {
                 const sel = selectedFixIdx === i;
@@ -373,15 +391,22 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                     key={i}
                     onClick={() => setSelectedFixIdx(i)}
                     className={[
-                      'text-left rounded-xl border px-3 py-2 text-sm',
-                      sel ? 'border-violet-500/40 bg-violet-500/20 text-violet-100' : 'border-brand-sky/20 bg-white text-slate-600 hover:bg-brand-sky/10'
+                      'text-left rounded-2xl border px-4 py-3 text-sm shadow-sm transition',
+                      sel
+                        ? 'border-brand-yellow bg-brand-yellow/90 text-brand'
+                        : 'border-white/15 bg-white/10 text-white hover:border-brand-yellow/60 hover:bg-brand-yellow/10'
                     ].join(' ')}
                   >
                     <div className="flex flex-col items-start gap-1 text-left">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-brand-sky/10 text-slate-800">
+                      <span
+                        className={[
+                          'inline-flex h-6 w-6 items-center justify-center rounded text-xs font-semibold',
+                          sel ? 'bg-white/40 text-brand' : 'bg-white/20 text-white',
+                        ].join(' ')}
+                      >
                         {Number(c.id) || i+1}
                       </span>
-                      <div className="whitespace-pre-wrap break-words text-slate-800/90">
+                      <div className="whitespace-pre-wrap break-words text-white">
                         {c.body || `選択肢${i+1}`}
                       </div>
                     </div>
@@ -402,15 +427,16 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                       res[b.key] = !!corr && ans.length > 0 ? ans === corr : false;
                     }
                     setBlankResults(res);
+                    const blanksOk = Object.values(res).every(Boolean);
                     if (choices.length) {
                       const correctIdx = choices.findIndex((x:any)=> !!x.is_correct);
-                      const ok = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
-                      setFixResult({ correct: correctIdx >= 0 && !!ok, correctIdx: correctIdx >= 0 ? correctIdx : null });
-                      notifyScore(!!ok && correctIdx >= 0 && Object.values(res).every(Boolean));
+                      const choiceOk = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
+                      setFixResult({ correct: correctIdx >= 0 && !!choiceOk, correctIdx: correctIdx >= 0 ? correctIdx : null });
+                      const overallOk = correctIdx >= 0 && !!choiceOk && blanksOk;
+                      reportScore(overallOk);
                     } else {
                       setFixResult(null);
-                      const ok = Object.values(res).every(Boolean);
-                      notifyScore(ok);
+                      reportScore(blanksOk);
                     }
                     setSubmitted(true);
                   }}
@@ -418,28 +444,17 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
               </div>
             )}
             {submitted && (
-              <ResultCard ok={!!fixResult?.correct} />
-            )}
-          </div>
-        )}
-
-        {/* 採点ボタンは各モードセクション直下に配置 */}
-
-        {/* 解説（reorder 以外は従来位置に表示） */}
-        {submitted && mode !== 'reorder' && (
-          <div className="mt-8">
-            <div className="text-xs text-slate-500 mb-2">💡 解説</div>
-            {expHtml ? (
-              <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: expHtml }} />
-            ) : (
-              <div className="text-sm text-slate-500">解説は設定されていません。</div>
+              <>
+                <ResultCard ok={!!fixResult?.correct} />
+                {lastResultOk === false && <ExplanationBlock />}
+              </>
             )}
           </div>
         )}
 
         {mode === 'reorder' && (
           <div className="space-y-2">
-            {items.length === 0 && <div className="text-sm text-slate-500">対象項目が未設定です。</div>}
+            {items.length === 0 && <div className="text-sm text-slate-800">対象項目が未設定です。</div>}
             {(() => {
               const keys = items.map((it)=>it.key);
               const base = (displayOrder || []).filter((k)=> keys.includes(k));
@@ -453,18 +468,29 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                 <button
                   type="button"
                   key={k}
-                  onClick={() => setOrderSelection((prev) => prev.includes(it.key) ? prev.filter((k) => k !== it.key) : [...prev, it.key])}
+                  onClick={() =>
+                    setOrderSelection((prev) =>
+                      prev.includes(it.key) ? prev.filter((x) => x !== it.key) : [...prev, it.key]
+                    )
+                  }
                   className={[
-                    'w-full text-left flex items-center gap-2 text-sm rounded-xl border px-3 py-2',
+                    'w-full text-left flex items-center gap-2 text-sm rounded-2xl border px-4 py-3 shadow-sm transition',
                     selected
-                      ? 'border-violet-500/40 bg-violet-500/20 text-violet-100'
-                      : 'border-brand-sky/20 bg-white text-slate-600 hover:bg-brand-sky/10'
+                      ? 'border-brand-yellow bg-brand-yellow/90 text-brand'
+                      : 'border-white/15 bg-white/10 text-white hover:border-brand-yellow/60 hover:bg-brand-yellow/10',
                   ].join(' ')}
                 >
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-brand-sky/10 text-slate-700">{i+1}</span>
-                  <span className="flex-1">{it.label || it.key || `項目${i+1}`}</span>
+                  <span
+                    className={[
+                      'inline-flex h-6 w-6 items-center justify-center rounded text-xs font-semibold',
+                      selected ? 'bg-white/40 text-brand' : 'bg-white/15 text-white',
+                    ].join(' ')}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 text-white">{it.label || it.key || `項目${i + 1}`}</span>
                   {selected && (
-                    <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded bg-brand-sky/10 px-2 text-xs text-violet-100">
+                    <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded bg-white/25 px-2 text-xs font-semibold text-brand">
                       {selectedIdx + 1}
                     </span>
                   )}
@@ -496,9 +522,10 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
             {submitted && (
               <>
                 <ResultCard ok={orderSelection.length === correctOrder.length && orderSelection.every((k, i) => k === correctOrder[i])} />
+                {lastResultOk === false && <ExplanationBlock />}
                 {/* 答え（正解順）: コードプレビューのみ */}
                 <div className="mt-3 grid gap-2">
-                  <div className="text-xs text-slate-500 mb-1">答え</div>
+                  <div className="text-xs text-slate-800 mb-1">答え</div>
                   {(() => {
                     const rows = (correctOrder || []).map((k) => {
                       const it = items.find((x) => x.key === k);
@@ -521,23 +548,6 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                 </div>
               </>
             )}
-            {submitted && (
-              <div className="mt-3">
-                <div className="text-xs text-slate-500 mb-1">💡 解説</div>
-                {expHtml ? (
-                  <div
-                    className="prose max-w-none"
-                    style={{
-                      '--tw-prose-headings': '#0f172a',
-                      '--tw-prose-links': '#1f6feb',
-                    } as React.CSSProperties}
-                    dangerouslySetInnerHTML={{ __html: expHtml }}
-                  />
-                ) : (
-                  <div className="text-sm text-slate-500">解説は設定されていません。</div>
-                )}
-              </div>
-            )}
             {!submitted && (
               <div className="pt-2 text-right">
                 <button
@@ -559,7 +569,7 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                       setFixResult(null);
                     }
                     const ok = orderSelection.length === correctOrder.length && orderSelection.every((k, i) => k === correctOrder[i]);
-                    notifyScore(ok);
+                    reportScore(ok);
                     setSubmitted(true);
                   }}
                 >採点</button>
@@ -582,11 +592,11 @@ function CodeReading({ template }: { template: string }) {
   }, [template]);
   return (
     <div className="mt-8">
-      <div className="text-xs text-slate-500 mb-2">コードリーディング</div>
+      <div className="text-xs text-slate-800 mb-2">コードリーディング</div>
       {html ? (
         <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
-        <div className="text-sm text-slate-500">コードリーディングは設定されていません。</div>
+        <div className="text-sm text-slate-800">コードリーディングは設定されていません。</div>
       )}
     </div>
   );

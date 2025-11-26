@@ -2,6 +2,8 @@ import { requireRole } from '@/lib/auth/requireRole';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ChevronDown } from 'lucide-react';
 
+type ChapterAttemptStatus = 'not_attempted' | 'failed' | 'passed';
+
 export const dynamic = 'force-dynamic';
 
 const modeLabel = (mode?: string | null) =>
@@ -75,7 +77,7 @@ export default async function ConfirmTestsPage() {
     const relatedChapters = chaptersByCourse.get(course.id) || [];
     return relatedChapters.some((chapter) => testsByChapter.has(chapter.id));
   });
-  const testStatusMap = new Map<string, 'passed' | 'failed'>();
+  const testStatusMap = new Map<string, ChapterAttemptStatus>();
   userTestResults.forEach((row) => {
     if (!row?.test_id) return;
     if (row.is_passed) {
@@ -84,6 +86,28 @@ export default async function ConfirmTestsPage() {
       testStatusMap.set(row.test_id, 'failed');
     }
   });
+  const getChapterStatus = (chapterId: string): ChapterAttemptStatus => {
+    const chapterTests = testsByChapter.get(chapterId) || [];
+    if (!chapterTests.length) return 'not_attempted';
+    let hasAnyResult = false;
+    let allPassed = true;
+    for (const test of chapterTests) {
+      const status = testStatusMap.get(test.id);
+      if (!status) {
+        allPassed = false;
+        continue;
+      }
+      hasAnyResult = true;
+      if (status !== 'passed') {
+        allPassed = false;
+        break;
+      }
+    }
+    if (hasAnyResult && allPassed && chapterTests.every((test) => testStatusMap.get(test.id) === 'passed')) {
+      return 'passed';
+    }
+    return hasAnyResult ? 'failed' : 'not_attempted';
+  };
 
   return (
     <div className="space-y-8 text-slate-100">
@@ -107,6 +131,8 @@ export default async function ConfirmTestsPage() {
               <div className="space-y-3">
                 {relatedChapters.map((chapter: any) => {
                   const chapterTests = testsByChapter.get(chapter.id) || [];
+                  const passedCount = chapterTests.filter((test) => testStatusMap.get(test.id) === 'passed').length;
+                  const accuracy = chapterTests.length ? Math.round((passedCount / chapterTests.length) * 100) : 0;
                   return (
                     <details
                       key={chapter.id}
@@ -122,7 +148,10 @@ export default async function ConfirmTestsPage() {
                             <div className="text-xs text-[color:var(--muted,#9CA3AF)]">クリックで開閉</div>
                           </div>
                         </div>
-                        <span className="text-xs text-[color:var(--muted,#9CA3AF)]">テスト {chapterTests.length} 件</span>
+                        <div className="flex items-center gap-3 text-xs text-[color:var(--muted,#9CA3AF)]">
+                          <span>テスト {chapterTests.length} 件</span>
+                          <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] text-yellow-200">正答率 {accuracy}%</span>
+                        </div>
                       </summary>
                       <div className="mt-3 space-y-2">
                         {chapterTests.map((test: any, index: number) => (

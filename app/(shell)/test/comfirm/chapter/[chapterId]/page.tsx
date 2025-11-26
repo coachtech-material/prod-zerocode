@@ -10,17 +10,35 @@ export default async function ChapterConfirmPage({ params, searchParams }: { par
   const supabase = createServerSupabaseClient();
   const chapterId = params.chapterId;
 
-  const [{ data: chapter }, { data: tests }] = await Promise.all([
-    supabase.from('chapters').select('id,title,course_id').eq('id', chapterId).maybeSingle(),
+  const { data: chapter } = await supabase
+    .from('chapters')
+    .select('id,title,course_id,chapter_sort_key')
+    .eq('id', chapterId)
+    .maybeSingle();
+  const [{ data: tests }, { data: siblingChapters }] = await Promise.all([
     supabase
       .from('tests')
       .select('id,title,mode,spec_yaml,status,course_id,chapter_id,created_at')
       .eq('status', 'published')
       .eq('chapter_id', chapterId)
       .order('created_at', { ascending: true }),
+    chapter?.course_id
+      ? supabase
+          .from('chapters')
+          .select('id,title,chapter_sort_key')
+          .eq('course_id', chapter.course_id)
+          .is('deleted_at', null)
+          .order('chapter_sort_key', { ascending: true })
+      : Promise.resolve({ data: [] } as { data: any[] | null }),
   ]);
 
   const startIndex = searchParams?.i ? Math.max(0, parseInt(String(searchParams.i), 10) || 0) : 0;
+  const orderedChapters = siblingChapters || [];
+  const currentIndex = orderedChapters.findIndex((ch) => ch.id === chapterId);
+  const nextChapter =
+    currentIndex >= 0 && currentIndex + 1 < orderedChapters.length
+      ? orderedChapters[currentIndex + 1]
+      : null;
 
   return (
     <div className="space-y-4">
@@ -37,7 +55,12 @@ export default async function ChapterConfirmPage({ params, searchParams }: { par
         <h1 className="text-xl font-semibold">{chapter?.title || 'チャプター'}</h1>
       </header>
 
-      <ChapterTestRunner tests={(tests || []).filter((t:any)=>!!t.mode)} startIndex={startIndex} />
+      <ChapterTestRunner
+        tests={(tests || []).filter((t:any)=>!!t.mode)}
+        startIndex={startIndex}
+        chapterTitle={chapter?.title || 'チャプター'}
+        nextChapter={nextChapter ? { id: nextChapter.id, title: nextChapter.title || '次のチャプター' } : null}
+      />
     </div>
   );
 }
