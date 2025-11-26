@@ -28,14 +28,14 @@ import { reorderTestsStructure, type TestReorderNode } from '@/app/(shell)/admin
 type Chapter = {
   id: string;
   title: string;
-  status: 'draft' | 'published' | null;
+  status?: string | null;
   chapter_sort_key?: number | null;
 };
 
 type TestItem = {
   id: string;
   title: string;
-  status: 'draft' | 'published' | null;
+  status?: string | null;
   mode?: string | null;
   chapter_id: string | null;
   test_sort_key?: number | null;
