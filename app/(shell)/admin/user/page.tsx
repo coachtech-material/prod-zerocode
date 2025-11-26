@@ -51,99 +51,6 @@ export default async function AdminUserPage() {
     issued_at: (r.issued_at as string | null) ?? null,
   }));
 
-  const studentIds = students.map((student) => student.id);
-
-  const [{ data: courses }, { data: chapters }, { data: lessons }, { data: progressRows }] = await Promise.all([
-    supabase
-      .from('courses')
-      .select('id,title,sort_key,status')
-      .eq('status', 'published')
-      .is('deleted_at', null)
-      .order('sort_key', { ascending: true }),
-    supabase
-      .from('chapters')
-      .select('id,title,chapter_sort_key,course_id,status')
-      .eq('status', 'published')
-      .is('deleted_at', null)
-      .order('course_id', { ascending: true })
-      .order('chapter_sort_key', { ascending: true }),
-    supabase
-      .from('lessons')
-      .select('id,title,section_sort_key,chapter_id,course_id,status')
-      .eq('status', 'published')
-      .is('deleted_at', null)
-      .order('course_id', { ascending: true })
-      .order('chapter_id', { ascending: true })
-      .order('section_sort_key', { ascending: true }),
-    studentIds.length
-      ? supabase
-          .from('progress')
-          .select('user_id,lesson_id,is_completed')
-          .in('user_id', studentIds)
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const courseMap = new Map<string, { title: string; sort_key: number }>(
-    (courses || []).map((course: any) => [course.id as string, { title: course.title as string, sort_key: course.sort_key as number }])
-  );
-  const chapterMap = new Map<string, { title: string; course_id: string | null; chapter_sort_key: number }>(
-    (chapters || []).map((chapter: any) => [
-      chapter.id as string,
-      {
-        title: chapter.title as string,
-        course_id: (chapter.course_id as string) ?? null,
-        chapter_sort_key: (chapter.chapter_sort_key as number) ?? 0,
-      },
-    ])
-  );
-
-  type SectionMeta = {
-    id: string;
-    title: string;
-    section_sort_key: number;
-    chapter_sort_key: number;
-    chapterTitle: string;
-    course_sort_key: number;
-    courseTitle: string;
-  };
-
-  const sectionColumns = (lessons || [])
-    .map<SectionMeta | null>((lesson: any) => {
-      const chapter = lesson.chapter_id ? chapterMap.get(lesson.chapter_id as string) : null;
-      const courseFromChapter = chapter?.course_id ? courseMap.get(chapter.course_id) : undefined;
-      const course = courseFromChapter || (lesson.course_id ? courseMap.get(lesson.course_id as string) : undefined);
-      if (!course) return null;
-      return {
-        id: lesson.id as string,
-        title: (lesson.title as string) ?? 'セクション',
-        section_sort_key: (lesson.section_sort_key as number) ?? 0,
-        chapter_sort_key: chapter?.chapter_sort_key ?? 0,
-        chapterTitle: chapter?.title ?? 'チャプター',
-        course_sort_key: course?.sort_key ?? 0,
-        courseTitle: course?.title ?? 'コース',
-      };
-    })
-    .filter((section): section is SectionMeta => section !== null)
-    .sort((a, b) => {
-      if (a.course_sort_key !== b.course_sort_key) return a.course_sort_key - b.course_sort_key;
-      if (a.chapter_sort_key !== b.chapter_sort_key) return a.chapter_sort_key - b.chapter_sort_key;
-      return a.section_sort_key - b.section_sort_key;
-    })
-    .map((section) => ({
-      id: section.id,
-      label: `${section.courseTitle} / ${section.chapterTitle} / ${section.title}`,
-    }));
-
-  const progressByUser: Record<string, string[]> = {};
-  (Array.isArray(progressRows) ? progressRows : []).forEach((row: any) => {
-    if (!row.is_completed) return;
-    const userId = row.user_id as string | undefined;
-    const lessonId = row.lesson_id as string | undefined;
-    if (!userId || !lessonId) return;
-    if (!progressByUser[userId]) progressByUser[userId] = [];
-    progressByUser[userId].push(lessonId);
-  });
-
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">ユーザー管理</h1>
@@ -152,8 +59,6 @@ export default async function AdminUserPage() {
         students={students}
         ops={operators}
         viewerRole={profile.role}
-        sections={sectionColumns}
-        userSectionProgress={progressByUser}
       />
     </div>
   );

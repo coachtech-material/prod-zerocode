@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, useTransition, type ReactNode } from 'react';
+import { useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { setUserDisabledAction, deleteUserAction } from '@/app/(shell)/admin/user/actions';
 
@@ -22,13 +22,6 @@ type TableProps = {
   showPhone?: boolean;
   showStatus?: boolean;
   renderActions?: (row: Row) => ReactNode;
-  sections?: SectionColumn[];
-  progressByUser?: Record<string, string[]>;
-};
-
-type SectionColumn = {
-  id: string;
-  label: string;
 };
 
 function StatusBadge({ row }: { row: Row }) {
@@ -53,34 +46,20 @@ function StatusBadge({ row }: { row: Row }) {
   );
 }
 
-function Table({ rows, showEmail, showPhone, showStatus, renderActions, sections = [], progressByUser = {} }: TableProps) {
+function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableProps) {
   const today = Date.now();
   const totalCols =
     5 +
     (showEmail ? 1 : 0) +
     (showPhone ? 1 : 0) +
     (showStatus ? 1 : 0) +
-    (renderActions ? 1 : 0) +
-    (sections.length ? sections.length : 0);
-
-  const progressLookup = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    Object.entries(progressByUser).forEach(([userId, sectionIds]) => {
-      map.set(userId, new Set(sectionIds));
-    });
-    return map;
-  }, [progressByUser]);
-
-  const tableMinWidth = 720 + (sections.length ? sections.length * 120 : 0);
+    (renderActions ? 1 : 0);
 
   return (
     <div>
       <div className="hidden rounded-xl border border-white/10 bg-[color:var(--surface-1)] shadow-[0_15px_35px_rgba(0,0,0,0.35)] sm:block">
         <div className="overflow-x-auto">
-          <table
-            className="w-full text-sm text-[color:var(--text)]"
-            style={{ minWidth: `${tableMinWidth}px` }}
-          >
+          <table className="w-full min-w-[720px] text-sm text-[color:var(--text)]">
             <thead className="bg-[color:var(--surface-2)] text-left text-[color:var(--muted)]">
               <tr>
                 <th className="px-3 py-2">名前</th>
@@ -92,11 +71,6 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions, sections
                 <th className="px-3 py-2">ロール</th>
                 <th className="px-3 py-2">ID</th>
                 {renderActions && <th className="px-3 py-2 text-right">操作</th>}
-                {sections.map((section) => (
-                  <th key={`section-header-${section.id}`} className="px-2 py-2 text-xs text-[color:var(--muted)]">
-                    {section.label}
-                  </th>
-                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
@@ -130,23 +104,6 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions, sections
                     {renderActions && (
                       <td className="px-3 py-2 text-right align-middle">{renderActions(row)}</td>
                     )}
-                    {sections.map((section) => {
-                      const completed = progressLookup.get(row.id)?.has(section.id);
-                      return (
-                        <td key={`section-${row.id}-${section.id}`} className="px-2 py-2 text-center">
-                          <span
-                            className={[
-                              'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                              completed
-                                ? 'bg-emerald-500/20 text-emerald-100'
-                                : 'bg-white/5 text-[color:var(--muted)]',
-                            ].join(' ')}
-                          >
-                            {completed ? '読了' : '未読'}
-                          </span>
-                        </td>
-                      );
-                    })}
                   </tr>
                 );
               })}
@@ -198,11 +155,6 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions, sections
                 {showStatus ? <StatusBadge row={row} /> : <span />}
                 <code className="break-all text-[11px] text-[color:var(--muted)]">{row.id}</code>
               </div>
-              {sections.length ? (
-                <div className="mt-2 text-xs text-[color:var(--muted)]">
-                  読了: {progressLookup.get(row.id)?.size ?? 0} / {sections.length}
-                </div>
-              ) : null}
               {actions ? <div className="mt-3 flex justify-end gap-2">{actions}</div> : null}
             </div>
           );
@@ -221,14 +173,10 @@ export default function UserTabs({
   students,
   ops,
   viewerRole,
-  sections = [],
-  userSectionProgress = {},
 }: {
   students: Row[];
   ops: Row[];
   viewerRole: 'user' | 'staff' | 'admin';
-  sections?: SectionColumn[];
-  userSectionProgress?: Record<string, string[]>;
 }) {
   const [tab, setTab] = useState<'students' | 'ops'>('students');
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -353,15 +301,11 @@ export default function UserTabs({
           showEmail
           showPhone
           showStatus
-          sections={sections}
-          progressByUser={userSectionProgress}
           renderActions={viewerRole === 'admin' ? (row) => renderStudentActions(row) : undefined}
         />
       ) : (
         <Table
           rows={ops}
-          sections={sections}
-          progressByUser={userSectionProgress}
           renderActions={viewerRole === 'admin' ? (row) => renderOpsActions(row) : undefined}
         />
       )}
