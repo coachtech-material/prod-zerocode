@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     login_disabled: !!r.login_disabled,
   }));
 
-  const studentIds = students.map((student) => student.id);
+  const studentIds = students.map((student: { id: string }) => student.id);
 
   const progressRes = await (studentIds.length
     ? supabase
