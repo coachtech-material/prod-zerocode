@@ -280,6 +280,26 @@ export async function reorderCourseStructure(courseId: string, payload: CourseSt
   revalidatePath(`/admin/courses/${courseId}`);
 }
 
+export async function setChapterStatus(courseId: string, chapterId: string, status: 'draft' | 'published') {
+  const supabase = createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+  if (!['draft', 'published'].includes(status)) {
+    throw new Error('不正なステータスです');
+  }
+  const { error } = await supabase
+    .from('chapters')
+    .update({ status, updated_at: new Date().toISOString(), updated_by: user!.id })
+    .eq('id', chapterId)
+    .eq('course_id', courseId);
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath(`/admin/courses/${courseId}`);
+}
+
 export async function createChapter(courseId: string, formData: FormData) {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();

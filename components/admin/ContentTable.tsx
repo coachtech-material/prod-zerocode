@@ -23,7 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { reorderCourseStructure } from '@/app/(shell)/admin/courses/actions';
+import { reorderCourseStructure, setChapterStatus } from '@/app/(shell)/admin/courses/actions';
 
 type Chapter = {
   id: string;
@@ -146,17 +146,22 @@ function ChapterCard({
   chapter,
   collapsed,
   toggle,
+  onToggleStatus,
+  statusPending,
   children,
 }: {
   chapter: ChapterNode;
   collapsed: boolean;
   toggle: () => void;
+  onToggleStatus: (nextStatus: 'draft' | 'published') => void;
+  statusPending: boolean;
   children: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `chapter-${chapter.id}`,
     data: { type: 'chapter', chapterId: chapter.id },
   });
+  const isPublished = chapter.status === 'published';
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -191,9 +196,22 @@ function ChapterCard({
         <div className="flex-1 min-w-[200px] space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-base font-semibold text-[color:var(--text)]">{chapter.title}</span>
-            <span className={['inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] leading-4', statusBadge(chapter.status)].join(' ')}>
-              {chapter.status === 'published' ? '公開' : '下書き'}
-            </span>
+            <button
+              type="button"
+              onClick={() => onToggleStatus(isPublished ? 'draft' : 'published')}
+              disabled={statusPending}
+              aria-pressed={isPublished}
+              className={[
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-4 focus-ring transition',
+                statusBadge(chapter.status),
+                statusPending ? 'opacity-60' : '',
+              ].join(' ')}
+            >
+              <span>{isPublished ? '公開中' : '非公開'}</span>
+              <span className="text-[9px] text-white/80">
+                {statusPending ? '更新中…' : '切り替え'}
+              </span>
+            </button>
             <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-[color:var(--muted)]">
               #{chapter.chapter_sort_key}
             </span>
@@ -279,6 +297,8 @@ export default function ContentTable({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isSaving, startTransition] = useTransition();
+  const [isStatusUpdating, startStatusTransition] = useTransition();
+  const [pendingChapterStatusId, setPendingChapterStatusId] = useState<string | null>(null);
   const pendingStructureRef = useRef<ChapterNode[] | null>(null);
 
   useEffect(() => {
@@ -304,7 +324,7 @@ export default function ContentTable({
         // ignore
       }
     },
-    [courseId]
+    [courseId, startStatusTransition]
   );
 
   const toggleChapter = useCallback(
@@ -468,6 +488,29 @@ export default function ContentTable({
     [persistStructure]
   );
 
+  const handleChapterStatusChange = useCallback(
+    (chapterId: string, nextStatus: 'draft' | 'published') => {
+      setPendingChapterStatusId(chapterId);
+      setSaveMessage('公開設定を更新しています…');
+      startStatusTransition(async () => {
+        try {
+          await setChapterStatus(courseId, chapterId, nextStatus);
+          setStructure((prev) =>
+            prev.map((chapter) => (chapter.id === chapterId ? { ...chapter, status: nextStatus } : chapter))
+          );
+          setSaveMessage('公開設定を更新しました');
+          setTimeout(() => setSaveMessage(null), 1800);
+        } catch (error) {
+          console.error(error);
+          setSaveMessage('公開設定の更新に失敗しました');
+        } finally {
+          setPendingChapterStatusId((current) => (current === chapterId ? null : current));
+        }
+      });
+    },
+    [courseId]
+  );
+
   const chapterIds = structure.map((chapter) => `chapter-${chapter.id}`);
 
   return (
@@ -489,6 +532,8 @@ export default function ContentTable({
                   chapter={chapter}
                   collapsed={!!collapsed[chapter.id]}
                   toggle={() => toggleChapter(chapter.id)}
+                  onToggleStatus={(status) => handleChapterStatusChange(chapter.id, status)}
+                  statusPending={pendingChapterStatusId === chapter.id && isStatusUpdating}
                 >
                   {!collapsed[chapter.id] && (
                     <div className="mt-4 space-y-3 border-l border-white/10 pl-4">
