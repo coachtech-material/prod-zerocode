@@ -885,7 +885,8 @@ export default function DashboardScreen() {
   const [timeline, setTimeline] = useState<TimelineData | null>(null);
   const [, setWeeklyStats] = useState<WeeklySummary[]>([]);
   const [, setCategoryShare] = useState<CategoryShare[]>([]);
-  const [loadingMonth, setLoadingMonth] = useState(false);
+  const [loadingMonth, setLoadingMonth] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [savingReport, setSavingReport] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
@@ -1037,6 +1038,7 @@ export default function DashboardScreen() {
       setError('ダッシュボード情報の取得に失敗しました');
     } finally {
       setLoadingMonth(false);
+      setInitialLoad(false);
     }
   }, [monthKey]);
 
@@ -1170,6 +1172,14 @@ export default function DashboardScreen() {
       setSavingGoal(false);
     }
   };
+
+  if (initialLoad && loadingMonth) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center text-[color:var(--muted)]">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 px-4 py-6 sm:px-6 sm:py-8">
