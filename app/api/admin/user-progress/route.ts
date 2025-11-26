@@ -1,59 +1,28 @@
-import { requireRole } from '@/lib/auth/requireRole';
+import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import UserTabs from '@/components/admin/UserTabs';
-import UserInviteForm from '@/components/admin/UserInviteForm';
 
-export const dynamic = 'force-dynamic';
-
-export default async function AdminUserPage() {
-  const { profile } = await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+export async function GET() {
   const supabase = createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const [{ data: stu }, { data: ops }] = await Promise.all([
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profileError || !profile || !['staff', 'admin'].includes(profile.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const [{ data: stu }, { data: courses }, { data: chapters }, { data: lessons }] = await Promise.all([
     supabase.rpc('ops_list_users_with_status'),
-    supabase.rpc('ops_list_staff_admin'),
-  ]);
-
-  const students: Array<{
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-    email: string | null;
-    role: string;
-    last_sign_in_at: string | null;
-    inactive: boolean;
-    phone: string | null;
-    issued_at: string | null;
-    login_disabled: boolean;
-  }> = (stu || []).map((r: any) => ({
-    id: r.id as string,
-    first_name: (r.first_name as string | null) ?? null,
-    last_name: (r.last_name as string | null) ?? null,
-    email: (r.email as string | null) ?? null,
-    role: 'user',
-    last_sign_in_at: (r.last_sign_in_at as string | null) ?? null,
-    inactive: !!r.inactive,
-    phone: (r.phone as string | null) ?? null,
-    issued_at: (r.issued_at as string | null) ?? null,
-    login_disabled: !!r.login_disabled,
-  }));
-  const operators: Array<{
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-    role: string;
-    issued_at: string | null;
-  }> = (ops || []).map((r: any) => ({
-    id: r.id as string,
-    first_name: (r.first_name as string | null) ?? null,
-    last_name: (r.last_name as string | null) ?? null,
-    role: r.role as string,
-    issued_at: (r.issued_at as string | null) ?? null,
-  }));
-
-  const studentIds = students.map((student) => student.id);
-
-  const [{ data: courses }, { data: chapters }, { data: lessons }, { data: progressRows }] = await Promise.all([
     supabase
       .from('courses')
       .select('id,title,sort_key,status')
@@ -75,27 +44,43 @@ export default async function AdminUserPage() {
       .order('course_id', { ascending: true })
       .order('chapter_id', { ascending: true })
       .order('section_sort_key', { ascending: true }),
-    studentIds.length
-      ? supabase
-          .from('progress')
-          .select('user_id,lesson_id,is_completed')
-          .in('user_id', studentIds)
-      : Promise.resolve({ data: [] }),
   ]);
 
-  const courseMap = new Map<string, { title: string; sort_key: number }>(
-    (courses || []).map((course: any) => [course.id as string, { title: course.title as string, sort_key: course.sort_key as number }])
-  );
-  const chapterMap = new Map<string, { title: string; course_id: string | null; chapter_sort_key: number }>(
-    (chapters || []).map((chapter: any) => [
-      chapter.id as string,
-      {
-        title: chapter.title as string,
-        course_id: (chapter.course_id as string) ?? null,
-        chapter_sort_key: (chapter.chapter_sort_key as number) ?? 0,
-      },
-    ])
-  );
+  type StudentSummary = {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    role: string;
+    last_sign_in_at: string | null;
+    inactive: boolean;
+    phone: string | null;
+    issued_at: string | null;
+    login_disabled: boolean;
+  };
+
+  const students: StudentSummary[] =
+    (stu || []).map((r: any) => ({
+      id: r.id as string,
+      first_name: (r.first_name as string | null) ?? null,
+      last_name: (r.last_name as string | null) ?? null,
+      email: (r.email as string | null) ?? null,
+      role: 'user',
+      last_sign_in_at: (r.last_sign_in_at as string | null) ?? null,
+      inactive: !!r.inactive,
+      phone: (r.phone as string | null) ?? null,
+      issued_at: (r.issued_at as string | null) ?? null,
+      login_disabled: !!r.login_disabled,
+    })) ?? [];
+
+  const studentIds = students.map((student) => student.id);
+
+  const { data: progressRows } = studentIds.length
+    ? await supabase
+        .from('progress')
+        .select('user_id,lesson_id,is_completed')
+        .in('user_id', studentIds)
+    : { data: [] };
 
   type SectionMeta = {
     id: string;
@@ -106,6 +91,24 @@ export default async function AdminUserPage() {
     course_sort_key: number;
     courseTitle: string;
   };
+
+  const courseMap = new Map<string, { title: string; sort_key: number }>(
+    (courses || []).map((course: any) => [
+      course.id as string,
+      { title: (course.title as string) ?? 'コース', sort_key: (course.sort_key as number) ?? 0 },
+    ])
+  );
+
+  const chapterMap = new Map<string, { title: string; course_id: string | null; chapter_sort_key: number }>(
+    (chapters || []).map((chapter: any) => [
+      chapter.id as string,
+      {
+        title: (chapter.title as string) ?? 'チャプター',
+        course_id: (chapter.course_id as string) ?? null,
+        chapter_sort_key: (chapter.chapter_sort_key as number) ?? 0,
+      },
+    ])
+  );
 
   const sectionColumns = (lessons || [])
     .map<SectionMeta | null>((lesson: any) => {
@@ -119,8 +122,8 @@ export default async function AdminUserPage() {
         section_sort_key: (lesson.section_sort_key as number) ?? 0,
         chapter_sort_key: chapter?.chapter_sort_key ?? 0,
         chapterTitle: chapter?.title ?? 'チャプター',
-        course_sort_key: course?.sort_key ?? 0,
-        courseTitle: course?.title ?? 'コース',
+        course_sort_key: course.sort_key,
+        courseTitle: course.title,
       };
     })
     .filter((section): section is SectionMeta => section !== null)
@@ -144,17 +147,10 @@ export default async function AdminUserPage() {
     progressByUser[userId].push(lessonId);
   });
 
-  return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold">ユーザー管理</h1>
-      <UserInviteForm viewerRole={profile.role} />
-      <UserTabs
-        students={students}
-        ops={operators}
-        viewerRole={profile.role}
-        sections={sectionColumns}
-        userSectionProgress={progressByUser}
-      />
-    </div>
-  );
+  const users = students.map((student) => ({
+    ...student,
+    completedSections: progressByUser[student.id] ?? [],
+  }));
+
+  return NextResponse.json({ sections: sectionColumns, users });
 }

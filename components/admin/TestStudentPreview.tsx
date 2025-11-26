@@ -104,54 +104,91 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
   // Choices are rendered as plain text (per previous spec)
 
   return (
-    <div className="flex min-h-[420px] gap-3">
-      {/* 左: 問題文 */}
-      <section className="flex-[1] min-w-0 rounded-xl border border-brand-sky/20 bg-white p-3 overflow-auto">
-        <div className="text-xs text-slate-500 mb-2">問題文</div>
-        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: html }} />
-      </section>
-
-      {/* 中央: リソース */}
-      <section className="flex-[2] min-w-0 rounded-xl border border-brand-sky/20 bg-white p-3">
-        <div className="text-xs text-slate-500 mb-2">リソース</div>
-        {files.length === 0 ? (
-          <div className="text-sm text-slate-500">表示設定されたファイルがありません。</div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1 overflow-x-auto">
-              {files.map((f, idx) => (
-                <button
-                  type="button"
-                  key={`${f.name}_${idx}`}
-                  className={[ 'rounded-md px-3 py-1.5 text-xs border', idx === activeIdx ? 'bg-brand-sky/20 border-brand-sky/30 text-slate-800' : 'bg-white border-brand-sky/20 text-slate-600 hover:bg-brand-sky/10' ].join(' ')}
-                  onClick={() => setActiveIdx(idx)}
-                >
-                  {f.name || `file_${idx+1}`}
-                </button>
-              ))}
-            </div>
-            <div className="rounded-xl border border-brand-sky/20 bg-white p-2">
-              <CodeEditor path={files[activeIdx]?.name} value={files[activeIdx]?.code || ''} onChange={()=>{}} readOnly showLineNumbers autoHeight />
-            </div>
-            {mode === 'semantic_fill' && (
-              <CodeReading template={template} />
-            )}
+    <div className="grid min-h-[420px] gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
+      <div className="space-y-4">
+        <section className="min-w-0 rounded-2xl border border-white/10 bg-[color:var(--surface-1)]/80 p-5 text-[color:var(--text)] shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
+          <div className="flex items-center justify-between text-xs uppercase tracking-wide text-[color:var(--muted)]">
+            <span>問題文</span>
+            <span className="rounded-full bg-white/10 px-3 py-0.5 text-[11px] font-semibold text-[color:var(--text)]">
+              {modeLabel(mode)}
+            </span>
           </div>
-        )}
-      </section>
+          <div
+            className="prose mt-4 max-w-none text-[color:var(--text)]"
+            style={{
+              '--tw-prose-headings': 'var(--text)',
+              '--tw-prose-links': '#58A6FF',
+              '--tw-prose-bold': 'var(--text)',
+            } as React.CSSProperties}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </section>
 
-      {/* 右: 回答欄 */}
-      <section className="flex-[1] min-w-0 rounded-xl border border-brand-sky/20 bg-white p-3 overflow-auto">
+        <section className="min-w-0 rounded-2xl border border-white/10 bg-white/10 p-4 text-[color:var(--text)] shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+          <div className="text-xs text-[color:var(--muted)] mb-2">参照リソース</div>
+          {files.length === 0 ? (
+            <div className="text-sm text-[color:var(--muted)]">表示設定されたファイルがありません。</div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                {files.map((f, idx) => (
+                  <button
+                    type="button"
+                    key={`${f.name}_${idx}`}
+                    className={[
+                      'rounded-xl border px-3 py-1.5 text-xs transition',
+                      idx === activeIdx
+                        ? 'border-brand text-brand bg-brand/10'
+                        : 'border-white/15 text-[color:var(--muted)] hover:border-brand/40 hover:text-brand',
+                    ].join(' ')}
+                    onClick={() => setActiveIdx(idx)}
+                  >
+                    {f.name || `file_${idx + 1}`}
+                  </button>
+                ))}
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-[color:var(--surface-1)]/70 p-2">
+                <CodeEditor
+                  path={files[activeIdx]?.name}
+                  value={files[activeIdx]?.code || ''}
+                  onChange={() => {}}
+                  readOnly
+                  showLineNumbers
+                  autoHeight
+                />
+              </div>
+              {mode === 'semantic_fill' && <CodeReading template={template} />}
+            </div>
+          )}
+        </section>
+
+        {expHtml && (
+          <section className="min-w-0 rounded-2xl border border-white/10 bg-white/10 p-4 text-[color:var(--text)] shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+            <div className="text-xs text-[color:var(--muted)] mb-2">解説</div>
+            <div
+              className="prose max-w-none"
+              style={{
+                '--tw-prose-headings': 'var(--text)',
+                '--tw-prose-links': '#58A6FF',
+                '--tw-prose-bold': 'var(--text)',
+              } as React.CSSProperties}
+              dangerouslySetInnerHTML={{ __html: expHtml }}
+            />
+          </section>
+        )}
+      </div>
+
+      <section className="min-w-0 rounded-2xl border border-white/10 bg-white p-4 text-slate-800 shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
         <div className="text-xs text-slate-500 mb-2">回答欄（プレビュー）</div>
 
         {mode === 'fill_blank' && (
           <div className="space-y-3">
             {blanks.length === 0 && <div className="text-sm text-slate-500">BLANKが未設定です。</div>}
             {blanks.map((b, i) => (
-              <div key={i} className="grid gap-2">
-                <div className="text-sm text-slate-700">{b.prompt || b.key}</div>
+              <div key={i} className="grid gap-2 rounded-xl border border-slate-200/60 bg-slate-50 p-3">
+                <div className="text-sm font-semibold text-slate-700">{b.prompt || b.key}</div>
                 {b.choices?.length ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {b.choices.map((c: string, ci: number) => {
                       const sel = selectedBlanks[b.key] === c;
                       return (
@@ -160,10 +197,10 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                           key={ci}
                           onClick={() => setSelectedBlanks((v) => ({ ...v, [b.key]: c }))}
                           className={[
-                            'text-left rounded-xl border px-3 py-2 text-sm',
+                            'text-left rounded-xl border px-3 py-2 text-sm transition',
                             sel
-                              ? 'border-violet-500/40 bg-violet-500/20 text-violet-100'
-                              : 'border-brand-sky/20 bg-white text-slate-600 hover:bg-brand-sky/10'
+                              ? 'border-violet-500/40 bg-violet-500/15 text-violet-900'
+                              : 'border-slate-200 bg-white text-slate-600 hover:border-brand hover:text-brand',
                           ].join(' ')}
                         >
                           {c}
@@ -173,56 +210,70 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                   </div>
                 ) : (
                   <input
-                    className="rounded-lg bg-brand-sky/10 px-2 py-1 text-sm"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                     placeholder="回答を入力"
                     value={selectedBlanks[b.key] || ''}
-                    onChange={(e)=> setSelectedBlanks((v)=> ({ ...v, [b.key]: e.target.value }))}
+                    onChange={(e) => setSelectedBlanks((v) => ({ ...v, [b.key]: e.target.value }))}
                   />
                 )}
                 {submitted && (
                   <div className="text-xs">
                     {blankResults[b.key] ? (
-                      <span className="text-emerald-300">正解</span>
+                      <span className="text-emerald-500">正解</span>
                     ) : (
-                      <span className="text-red-600">不正解</span>
+                      <span className="text-rose-500">不正解</span>
                     )}
-                    {!blankResults[b.key] && (b.correct != null && String(b.correct).length > 0) && (
-                      <span className="ml-2 text-slate-600">正解: <code className="text-slate-800">{String(b.correct)}</code></span>
+                    {!blankResults[b.key] && b.correct && (
+                      <span className="ml-2 text-slate-600">
+                        正解: <code className="text-slate-800">{String(b.correct)}</code>
+                      </span>
                     )}
                   </div>
                 )}
               </div>
             ))}
-            {!submitted && (
-              <div className="pt-3 text-right">
+            <div className="pt-4 flex justify-end gap-2">
+              {submitted && (
                 <button
                   type="button"
-                  className="rounded-xl bg-brand-yellow px-4 py-2 text-brand focus-ring"
-                  onClick={() => {
-                    const res: Record<string, boolean> = {};
-                    for (const b of blanks) {
-                      const ans = (selectedBlanks[b.key] || '').trim();
-                      const corr = String(b.correct ?? '').trim();
-                      res[b.key] = !!corr && ans.length > 0 ? ans === corr : false;
-                    }
-                    setBlankResults(res);
-                    if (choices.length) {
-                      const correctIdx = choices.findIndex((x:any)=> !!x.is_correct);
-                      const ok = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
-                      setFixResult({ correct: correctIdx >= 0 && !!ok, correctIdx: correctIdx >= 0 ? correctIdx : null });
-                      notifyScore(!!ok && correctIdx >= 0 && Object.values(res).every(Boolean));
-                    } else {
-                      setFixResult(null);
-                      const ok = Object.values(res).every(Boolean);
-                      notifyScore(ok);
-                    }
-                    setSubmitted(true);
-                  }}
-                >採点</button>
-              </div>
-            )}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:border-brand hover:text-brand"
+                  onClick={resetAttempt}
+                >
+                  再チャレンジ
+                </button>
+              )}
+              <button
+                type="button"
+                className="rounded-xl bg-brand-yellow px-4 py-2 text-brand focus-ring"
+                onClick={() => {
+                  const res: Record<string, boolean> = {};
+                  for (const b of blanks) {
+                    const ans = (selectedBlanks[b.key] || '').trim();
+                    const corr = String(b.correct ?? '').trim();
+                    res[b.key] = !!corr && ans.length > 0 ? ans === corr : false;
+                  }
+                  setBlankResults(res);
+                  if (choices.length) {
+                    const correctIdx = choices.findIndex((x: any) => !!x.is_correct);
+                    const ok = typeof selectedFixIdx === 'number' && selectedFixIdx === correctIdx;
+                    setFixResult({
+                      correct: correctIdx >= 0 && !!ok,
+                      correctIdx: correctIdx >= 0 ? correctIdx : null,
+                    });
+                    notifyScore(!!ok && correctIdx >= 0 && Object.values(res).every(Boolean));
+                  } else {
+                    setFixResult(null);
+                    const ok = Object.values(res).every(Boolean);
+                    notifyScore(ok);
+                  }
+                  setSubmitted(true);
+                }}
+              >
+                採点
+              </button>
+            </div>
             {submitted && (
-              <ResultCard ok={blanks.length > 0 && (blanks || []).every((b:any) => !!blankResults[b.key])} />
+              <ResultCard ok={blanks.length > 0 && (blanks || []).every((b: any) => !!blankResults[b.key])} />
             )}
           </div>
         )}
@@ -474,7 +525,14 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
               <div className="mt-3">
                 <div className="text-xs text-slate-500 mb-1">💡 解説</div>
                 {expHtml ? (
-                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: expHtml }} />
+                  <div
+                    className="prose max-w-none"
+                    style={{
+                      '--tw-prose-headings': '#0f172a',
+                      '--tw-prose-links': '#1f6feb',
+                    } as React.CSSProperties}
+                    dangerouslySetInnerHTML={{ __html: expHtml }}
+                  />
                 ) : (
                   <div className="text-sm text-slate-500">解説は設定されていません。</div>
                 )}
@@ -532,4 +590,19 @@ function CodeReading({ template }: { template: string }) {
       )}
     </div>
   );
+}
+
+function modeLabel(mode: Mode) {
+  switch (mode) {
+    case 'fill_blank':
+      return '穴埋め';
+    case 'semantic_fill':
+      return '言語化穴埋め';
+    case 'fix':
+      return '修正';
+    case 'reorder':
+      return '並べ替え';
+    default:
+      return 'プレビュー';
+  }
 }

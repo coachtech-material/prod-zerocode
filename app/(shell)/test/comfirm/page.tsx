@@ -1,8 +1,19 @@
 import { requireRole } from '@/lib/auth/requireRole';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import StudentTestPreview from '@/components/admin/TestStudentPreview';
+import { ChevronDown } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+
+const modeLabel = (mode?: string | null) =>
+  mode === 'fill_blank'
+    ? '穴埋め'
+    : mode === 'semantic_fill'
+    ? '言語化穴埋め'
+    : mode === 'fix'
+    ? '修正'
+    : mode === 'reorder'
+    ? '並べ替え'
+    : '未設定';
 
 export default async function ConfirmTestsPage() {
   await requireRole(['user']);
@@ -16,90 +27,154 @@ export default async function ConfirmTestsPage() {
       .order('created_at', { ascending: true }),
     supabase
       .from('chapters')
-      .select('id,title,course_id')
+      .select('id,title,course_id,chapter_sort_key')
       .is('deleted_at', null)
       .order('chapter_sort_key', { ascending: true })
       .order('created_at', { ascending: true }),
     supabase
       .from('tests')
-      .select('id,title,mode,spec_yaml,status,course_id,chapter_id')
+      .select('id,title,mode,status,course_id,chapter_id,created_at')
       .eq('status', 'published')
+      .order('chapter_id', { ascending: true })
       .order('created_at', { ascending: true }),
   ]);
-
-  const allTests = (tests || []).filter((t: any) => !!t.mode);
-  const courseMap = new Map<string, { id: string; title: string | null }>();
-  (courses || []).forEach((c: any) => courseMap.set(c.id, c));
-  const chaptersByCourse = new Map<string, Array<any>>();
-  (chapters || []).forEach((ch: any) => {
-    const arr = chaptersByCourse.get(ch.course_id) || [];
-    arr.push(ch);
-    chaptersByCourse.set(ch.course_id, arr);
-  });
-
-  // Group tests by course -> chapter (null chapter goes under "コース直下")
-  const testsByCourse = new Map<string, Map<string | null, Array<any>>>();
-  for (const t of allTests) {
-    if (!testsByCourse.has(t.course_id)) testsByCourse.set(t.course_id, new Map());
-    const byChapter = testsByCourse.get(t.course_id)!;
-    const key = t.chapter_id || null;
-    if (!byChapter.has(key)) byChapter.set(key, []);
-    byChapter.get(key)!.push(t);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let userTestResults: Array<{ test_id: string; is_passed: boolean | null }> = [];
+  if (user?.id) {
+    const { data: rows, error } = await supabase
+      .from('test_results')
+      .select('test_id,is_passed')
+      .eq('user_id', user.id);
+    if (error) {
+      if ((error as any)?.code !== '42P01') {
+        console.error('test_results fetch error', error);
+      }
+    } else {
+      userTestResults = rows ?? [];
+    }
   }
 
-  const orderedCourses = (courses || []).filter((c: any) => testsByCourse.has(c.id));
+  const allTests = (tests || []).filter((test: any) => !!test.mode && !!test.chapter_id);
+  const testsByChapter = new Map<string, Array<any>>();
+  for (const test of allTests) {
+    const chapterId = test.chapter_id as string;
+    if (!testsByChapter.has(chapterId)) testsByChapter.set(chapterId, []);
+    testsByChapter.get(chapterId)!.push(test);
+  }
 
-  const ModeBadge = ({ mode }: { mode: string }) => (
-    <span className="inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/15 px-2 py-0.5 text-[11px] leading-4 text-indigo-700">
-      {mode === 'fill_blank'
-        ? '穴埋め'
-        : mode === 'semantic_fill'
-        ? '言語化穴埋め'
-        : mode === 'fix'
-        ? '修正'
-        : mode === 'reorder'
-        ? '並べ替え'
-        : '未設定'}
-    </span>
-  );
+  const chaptersByCourse = new Map<string, Array<any>>();
+  (chapters || []).forEach((chapter: any) => {
+    const arr = chaptersByCourse.get(chapter.course_id) || [];
+    arr.push(chapter);
+    chaptersByCourse.set(chapter.course_id, arr);
+  });
+
+  const orderedCourses = (courses || []).filter((course: any) => {
+    const relatedChapters = chaptersByCourse.get(course.id) || [];
+    return relatedChapters.some((chapter) => testsByChapter.has(chapter.id));
+  });
+  const testStatusMap = new Map<string, 'passed' | 'failed'>();
+  userTestResults.forEach((row) => {
+    if (!row?.test_id) return;
+    if (row.is_passed) {
+      testStatusMap.set(row.test_id, 'passed');
+    } else if (row.is_passed === false) {
+      testStatusMap.set(row.test_id, 'failed');
+    }
+  });
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-xl font-semibold">確認テスト</h1>
+    <div className="space-y-8 text-slate-100">
+      <h1 className="text-xl font-semibold text-white">確認テスト</h1>
 
       {orderedCourses.length === 0 ? (
-        <div className="text-sm text-slate-500">公開中の確認テストはありません。</div>
+        <div className="text-sm text-[color:var(--muted,#9CA3AF)]">公開中の確認テストはありません。</div>
       ) : (
         orderedCourses.map((course: any) => {
-          const byChapter = testsByCourse.get(course.id)!;
-          const courseChapters = chaptersByCourse.get(course.id) || [];
-          const orderedChapterGroups: Array<{ id: string | null; title: string }> = [
-            { id: null, title: 'コース直下' },
-            ...courseChapters.map((ch: any) => ({ id: ch.id as string, title: ch.title || ch.id })),
-          ];
+          const relatedChapters = (chaptersByCourse.get(course.id) || []).filter((chapter: any) =>
+            testsByChapter.has(chapter.id)
+          );
 
           return (
-            <section key={course.id} className="space-y-4">
-              <header className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-800">{course.title || '無題のコース'}</h2>
+            <section key={course.id} className="space-y-4 rounded-2xl border border-white/10 bg-[color:var(--surface-1,#111827)] p-4 shadow">
+              <header className="flex items-center justify-between border-b border-white/10 pb-2">
+                <h2 className="text-lg font-semibold text-white">{course.title || '無題のコース'}</h2>
+                <p className="text-xs text-[color:var(--muted,#9CA3AF)]">チャプター {relatedChapters.length} 件</p>
               </header>
 
-              {orderedChapterGroups.map((grp) => (
-                <div key={grp.id ?? 'root'} className="space-y-3">
-                  <div className="text-sm text-slate-600">
-                    {grp.id ? (
-                      <a href={`/test/comfirm/chapter/${grp.id}`} className="underline decoration-white/20 hover:decoration-white focus-ring rounded">
-                        {grp.title}
-                      </a>
-                    ) : (
-                      <a href={`/test/comfirm/course/${course.id}`} className="underline decoration-white/20 hover:decoration-white focus-ring rounded">
-                        {grp.title}
-                      </a>
-                    )}
-                  </div>
-                  {/* チャプター詳細ページでランナー表示するため、ここではリンクのみ */}
-                </div>
-              ))}
+              <div className="space-y-3">
+                {relatedChapters.map((chapter: any) => {
+                  const chapterTests = testsByChapter.get(chapter.id) || [];
+                  return (
+                    <details
+                      key={chapter.id}
+                      className="group/chapter rounded-xl border border-white/10 bg-white/5 p-3 shadow-sm open:border-indigo-300/60 open:bg-indigo-500/10"
+                    >
+                      <summary className="flex cursor-pointer select-none items-center justify-between gap-4 text-sm text-white">
+                        <div className="flex flex-1 items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition group-open/chapter:rotate-180">
+                            <ChevronDown size={16} />
+                          </div>
+                          <div>
+                            <span className="font-medium">{chapter.title || chapter.id}</span>
+                            <div className="text-xs text-[color:var(--muted,#9CA3AF)]">クリックで開閉</div>
+                          </div>
+                        </div>
+                        <span className="text-xs text-[color:var(--muted,#9CA3AF)]">テスト {chapterTests.length} 件</span>
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {chapterTests.map((test: any, index: number) => (
+                          <div
+                            key={test.id}
+                            className="flex flex-wrap items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <a
+                                href={`/test/comfirm/chapter/${chapter.id}?i=${index}`}
+                                className="truncate font-medium text-white underline decoration-transparent hover:decoration-indigo-300"
+                              >
+                                {test.title || '(無題)'}
+                              </a>
+                              <div className="text-xs text-[color:var(--muted,#D1D5DB)]">{modeLabel(test.mode)}</div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={[
+                                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                                  (() => {
+                                    const state = testStatusMap.get(test.id);
+                                    if (state === 'passed') {
+                                      return 'bg-emerald-500/20 text-emerald-100 border border-emerald-500/40';
+                                    }
+                                    if (state === 'failed') {
+                                      return 'bg-rose-500/15 text-rose-100 border border-rose-500/40';
+                                    }
+                                    return 'border border-white/15 text-[color:var(--muted,#D1D5DB)]';
+                                  })(),
+                                ].join(' ')}
+                              >
+                                {testStatusMap.get(test.id) === 'passed'
+                                  ? '合格'
+                                  : testStatusMap.get(test.id) === 'failed'
+                                    ? '不合格'
+                                    : '未受験'}
+                              </span>
+                              <a
+                                href={`/test/comfirm/chapter/${chapter.id}?i=${index}`}
+                                className="text-xs font-semibold text-indigo-300 hover:underline"
+                              >
+                                受験する
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
             </section>
           );
         })

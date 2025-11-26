@@ -16,6 +16,9 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
+  experimental: {
+    optimizePackageImports: [],
+  },
   images: {
     remotePatterns: [
       ...(SUPABASE_HOST

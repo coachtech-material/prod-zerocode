@@ -221,12 +221,20 @@ export default function MarkdownEditor({ initialMarkdown, formId, fieldId, secti
             ref={taRef}
             value={val}
             onChange={(e) => { setVal(e.target.value); writeBack(e.target.value); }}
-            className="w-full min-h-[200px] bg-transparent outline-none focus:outline-none font-mono text-sm"
+            className="w-full min-h-[200px] bg-transparent outline-none focus:outline-none font-mono text-sm text-slate-800"
           />
         </div>
       ) : (
-        <div className="rounded-2xl border border-brand-sky/20 bg-white p-3 min-h-[200px]">
-          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+        <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-1)]/70 p-3 min-h-[200px]">
+          <div
+            className="prose max-w-none text-[color:var(--text)]"
+            style={{
+              '--tw-prose-headings': 'var(--text)',
+              '--tw-prose-links': '#58A6FF',
+              '--tw-prose-bold': 'var(--text)',
+            } as React.CSSProperties}
+            dangerouslySetInnerHTML={{ __html: previewHtml }}
+          />
         </div>
       )}
     </div>
