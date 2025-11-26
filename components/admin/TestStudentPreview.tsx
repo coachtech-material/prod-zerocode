@@ -299,7 +299,7 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
               <div key={i} className="grid gap-2">
                 <div className="text-sm text-slate-800">{b.key}</div>
                 {b.choices?.length ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {b.choices.map((c: string, ci: number) => {
                       const sel = selectedBlanks[b.key] === c;
                       return (
@@ -308,10 +308,10 @@ export default function StudentTestPreview({ mode, initialSpec, onScored }: { mo
                           key={ci}
                           onClick={() => setSelectedBlanks((v) => ({ ...v, [b.key]: c }))}
                           className={[
-                            'text-left rounded-xl border px-3 py-2 text-sm',
+                            'text-left rounded-2xl border px-4 py-3 text-sm shadow-sm transition',
                             sel
-                              ? 'border-violet-500/40 bg-violet-500/20 text-violet-100'
-                              : 'border-brand-sky/20 bg-white text-slate-800 hover:bg-brand-sky/10'
+                              ? 'border-brand-yellow bg-brand-yellow/90 text-brand'
+                              : 'border-white/15 bg-white/10 text-white hover:border-brand-yellow/60 hover:bg-brand-yellow/10',
                           ].join(' ')}
                         >
                           {c}
