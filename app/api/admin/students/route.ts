@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const supabase = createServerSupabaseAdminClient();
 
   const [studentsRes, coursesRes, chaptersRes, lessonsRes] = await Promise.all([
-    supabase.rpc('ops_list_users_with_status'),
+    supabase.rpc('ops_export_users'),
     supabase
       .from('courses')
       .select('id,title,sort_key,status,deleted_at')
