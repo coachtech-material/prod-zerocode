@@ -40,7 +40,6 @@ export default function Sidebar({ role, expanded, onExpandToggle, mobileOpen, on
         { href: '/dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
         { href: '/courses', label: 'コース', icon: BookOpen },
         { href: '/test/comfirm', label: '確認テスト', icon: BarChart3 },
-        { href: '/interview', label: '面談予約', icon: CalendarClock },
         { href: '/settings', label: '設定', icon: Settings },
       ] as const;
     }
