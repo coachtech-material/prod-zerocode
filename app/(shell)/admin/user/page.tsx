@@ -9,6 +9,29 @@ export const dynamic = 'force-dynamic';
 type CourseRecord = { id: string; title: string };
 type ChapterRecord = { id: string; title: string; course_id: string };
 type SectionRecord = { id: string; title: string; course_id: string; chapter_id: string; section_sort_key: number | null };
+type StudentRecord = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  role: 'user';
+  last_sign_in_at: string | null;
+  inactive: boolean;
+  phone: string | null;
+  issued_at: string | null;
+  login_disabled: boolean;
+  ops_tagged: boolean;
+  interview_completed: boolean;
+};
+type OperatorRecord = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  issued_at: string | null;
+  ops_tagged: true;
+  interview_completed: true;
+};
 
 type ProgressLimitView = {
   id: string;
@@ -104,7 +127,7 @@ export default async function AdminUserPage() {
     createdAt: (limit.created_at as string | null) ?? null,
   }));
 
-  const students = (stu || []).map((r: any) => ({
+  const students: StudentRecord[] = (stu || []).map((r: any): StudentRecord => ({
     id: r.id as string,
     first_name: (r.first_name as string | null) ?? null,
     last_name: (r.last_name as string | null) ?? null,
@@ -119,7 +142,7 @@ export default async function AdminUserPage() {
     interview_completed: !!r.interview_completed,
   }));
 
-  const operators = (ops || []).map((r: any) => ({
+  const operators: OperatorRecord[] = (ops || []).map((r: any): OperatorRecord => ({
     id: r.id as string,
     first_name: (r.first_name as string | null) ?? null,
     last_name: (r.last_name as string | null) ?? null,
