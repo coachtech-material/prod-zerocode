@@ -12,21 +12,23 @@ function escapeHtml(input: string): string {
 export async function mdToSafeHtml(md: string): Promise<string> {
   // Root-cause fix: use a real Markdown pipeline (remark/rehype) with dynamic imports
   try {
-    const [{ unified }, remarkParseMod, remarkRehypeMod, rehypeSanitizeMod, rehypeStringifyMod] = await Promise.all([
+    const [
+      { unified },
+      remarkParseMod,
+      remarkRehypeMod,
+      rehypeSanitizeMod,
+      rehypeStringifyMod,
+      remarkGfmMod,
+    ] = await Promise.all([
       import('unified'),
       import('remark-parse'),
       import('remark-rehype'),
       import('rehype-sanitize'),
       import('rehype-stringify'),
+      import('remark-gfm'),
     ]);
     const remarkParse = (remarkParseMod as any).default || remarkParseMod;
-    let remarkGfm: any = null;
-    try {
-      const modName = ['remark','-gfm'].join('');
-      const dynImport: any = (new Function('m', 'return import(m)')) as any;
-      const g = await dynImport(modName);
-      remarkGfm = (g as any).default || g;
-    } catch {}
+    const remarkGfm = (remarkGfmMod as any).default || remarkGfmMod;
     const remarkRehype = (remarkRehypeMod as any).default || remarkRehypeMod;
     const rehypeSanitize = (rehypeSanitizeMod as any).default || rehypeSanitizeMod;
     const defaultSchema = (rehypeSanitizeMod as any).defaultSchema;
@@ -46,7 +48,19 @@ export async function mdToSafeHtml(md: string): Promise<string> {
       ];
       // Allow video/source tags and attributes for safe embeds
       (schema as any).tagNames = [
-        ...new Set([ ...(((schema as any).tagNames) || []), 'video', 'source', 'table', 'thead', 'tbody', 'tr', 'th', 'td' ])
+        ...new Set([
+          ...(((schema as any).tagNames) || []),
+          'video',
+          'source',
+          'table',
+          'thead',
+          'tbody',
+          'tr',
+          'th',
+          'td',
+          'input',
+          'del',
+        ])
       ];
       (schema as any).attributes.video = [
         ...(((schema as any).attributes.video) || []),
@@ -71,6 +85,22 @@ export async function mdToSafeHtml(md: string): Promise<string> {
       (schema as any).attributes.td = [
         ...(((schema as any).attributes.td) || []),
         ['className'], ['align'], ['colspan'], ['rowspan']
+      ];
+      (schema as any).attributes.input = [
+        ...(((schema as any).attributes.input) || []),
+        ['type'], ['disabled'], ['checked']
+      ];
+      (schema as any).attributes.ul = [
+        ...(((schema as any).attributes.ul) || []),
+        ['className']
+      ];
+      (schema as any).attributes.ol = [
+        ...(((schema as any).attributes.ol) || []),
+        ['className']
+      ];
+      (schema as any).attributes.li = [
+        ...(((schema as any).attributes.li) || []),
+        ['className']
       ];
     }
 

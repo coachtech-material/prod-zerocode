@@ -23,7 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { reorderCourseStructure, setChapterStatus } from '@/app/(shell)/admin/courses/actions';
+import { reorderCourseStructure, setChapterStatus, setSectionStatus } from '@/app/(shell)/admin/courses/actions';
 
 type Chapter = {
   id: string;
@@ -234,9 +234,13 @@ function ChapterCard({
 function SectionRow({
   section,
   courseId,
+  onToggleStatus,
+  statusPending,
 }: {
   section: Section;
   courseId: string;
+  onToggleStatus: (nextStatus: 'draft' | 'published') => void;
+  statusPending: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `section-${section.id}`,
@@ -246,6 +250,7 @@ function SectionRow({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  const isPublished = section.status === 'published';
   return (
     <div
       ref={setNodeRef}
@@ -272,9 +277,20 @@ function SectionRow({
           >
             {section.title}
           </Link>
-          <span className={['inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] leading-4', statusBadge(section.status)].join(' ')}>
-            {section.status === 'published' ? '公開' : '下書き'}
-          </span>
+          <button
+            type="button"
+            onClick={() => onToggleStatus(isPublished ? 'draft' : 'published')}
+            disabled={statusPending}
+            aria-pressed={isPublished}
+            className={[
+              'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] leading-4 focus-ring transition',
+              statusBadge(section.status),
+              statusPending ? 'opacity-60' : '',
+            ].join(' ')}
+          >
+            <span>{isPublished ? '公開中' : '下書き'}</span>
+            <span className="text-[9px] text-white/80">{statusPending ? '更新中…' : '切り替え'}</span>
+          </button>
         </div>
         <div className="text-xs text-[color:var(--muted)]">目安: {section.duration_min || 0} 分</div>
       </div>
@@ -299,6 +315,7 @@ export default function ContentTable({
   const [isSaving, startTransition] = useTransition();
   const [isStatusUpdating, startStatusTransition] = useTransition();
   const [pendingChapterStatusId, setPendingChapterStatusId] = useState<string | null>(null);
+  const [pendingSectionStatusId, setPendingSectionStatusId] = useState<string | null>(null);
   const pendingStructureRef = useRef<ChapterNode[] | null>(null);
 
   useEffect(() => {
@@ -511,6 +528,34 @@ export default function ContentTable({
     [courseId]
   );
 
+  const handleSectionStatusChange = useCallback(
+    (sectionId: string, nextStatus: 'draft' | 'published') => {
+      setPendingSectionStatusId(sectionId);
+      setSaveMessage('公開設定を更新しています…');
+      startStatusTransition(async () => {
+        try {
+          await setSectionStatus(courseId, sectionId, nextStatus);
+          setStructure((prev) =>
+            prev.map((chapter) => ({
+              ...chapter,
+              sections: chapter.sections.map((section) =>
+                section.id === sectionId ? { ...section, status: nextStatus } : section
+              ),
+            }))
+          );
+          setSaveMessage('公開設定を更新しました');
+          setTimeout(() => setSaveMessage(null), 1800);
+        } catch (error) {
+          console.error(error);
+          setSaveMessage('公開設定の更新に失敗しました');
+        } finally {
+          setPendingSectionStatusId((current) => (current === sectionId ? null : current));
+        }
+      });
+    },
+    [courseId]
+  );
+
   const chapterIds = structure.map((chapter) => `chapter-${chapter.id}`);
 
   return (
@@ -546,7 +591,12 @@ export default function ContentTable({
                         )}
                         {chapter.sections.map((section, index) => (
                           <div key={section.id} className="space-y-1">
-                            <SectionRow section={section} courseId={courseId} />
+                            <SectionRow
+                              section={section}
+                              courseId={courseId}
+                              onToggleStatus={(next) => handleSectionStatusChange(section.id, next)}
+                              statusPending={pendingSectionStatusId === section.id && isStatusUpdating}
+                            />
                             <SectionDropZone chapterId={chapter.id} index={index + 1} />
                           </div>
                         ))}
