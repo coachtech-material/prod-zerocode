@@ -9,7 +9,11 @@ import OpenAddContentButton from '@/components/admin/OpenAddContentButton';
 import ContentTable from '@/components/admin/ContentTable';
 
 export default async function CourseDetailPage({ params, searchParams }: { params: { courseId: string }; searchParams?: Record<string, string | string[] | undefined> }) {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   const supabase = createServerSupabaseClient();
   const { data: course } = await supabase
     .from('courses')

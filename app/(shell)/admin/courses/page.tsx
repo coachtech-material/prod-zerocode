@@ -16,7 +16,11 @@ function Message({ searchParams }: { searchParams?: { [k: string]: string | stri
 }
 
 export default async function AdminCoursesPage({ searchParams }: { searchParams?: { [k: string]: string | string[] | undefined } }) {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   const supabase = createServerSupabaseClient();
   const { data: courses } = await supabase
     .from('courses')

@@ -12,7 +12,11 @@ export const dynamic = 'force-dynamic';
 // Actions and data loaders moved to lib/tests/admin for reuse
 
 export default async function TestDetailPage({ params, searchParams }: { params: { testId: string }, searchParams?: Record<string, string> }) {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   const { test, courses, chapters } = await loadTestWithMeta(params.testId);
   if (!test) return (<div className="text-sm text-slate-600">テストが見つかりません。</div>);
   const canDetails = !!test.mode;

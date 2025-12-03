@@ -1,7 +1,11 @@
 import { requireRole } from '@/lib/auth/requireRole';
 
 export default async function AdminPage() {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Admin</h1>

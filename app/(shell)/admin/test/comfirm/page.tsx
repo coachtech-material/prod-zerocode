@@ -35,7 +35,11 @@ async function loadData() {
 }
 
 export default async function AdminConfirmManagePage() {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   const { courses, chapters, tests } = await loadData();
   const chaptersByCourse = chapters.reduce<Record<string, typeof chapters>>((acc, chapter) => {
     if (!acc[chapter.course_id]) acc[chapter.course_id] = [];

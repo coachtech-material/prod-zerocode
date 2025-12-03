@@ -2,7 +2,11 @@ import Link from 'next/link';
 import { requireRole } from '@/lib/auth/requireRole';
 
 export default async function AdminTestIndexPage() {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">テスト管理</h1>

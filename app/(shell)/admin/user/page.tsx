@@ -6,7 +6,11 @@ import UserInviteForm from '@/components/admin/UserInviteForm';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminUserPage() {
-  const { profile } = await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  const { profile } = await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   const supabase = createServerSupabaseClient();
 
   const [{ data: stu }, { data: ops }] = await Promise.all([

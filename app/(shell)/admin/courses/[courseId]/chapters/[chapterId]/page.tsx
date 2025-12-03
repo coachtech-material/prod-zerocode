@@ -6,7 +6,11 @@ import { updateChapterMeta, softDeleteChapter, restoreChapter, deleteChapter, re
 import SectionsReorderTable from '@/components/admin/SectionsReorderTable';
 
 export default async function ChapterDetailPage({ params }: { params: { courseId: string; chapterId: string } }) {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   const supabase = createServerSupabaseClient();
   const { data: course } = await supabase.from('courses').select('id,title').eq('id', params.courseId).single();
   const { data: chapter } = await supabase

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChapterTestProgress, DailyReportSummary, MonthlySummary } from '@/lib/dashboard/types';
 import { fetchJson } from '@/lib/dashboard/client';
 import { formatDateKey, formatDuration, formatProgressRatio, pad } from '@/lib/dashboard/format';
+import { createClient } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 const today = new Date();
@@ -11,6 +12,10 @@ const palette = ['#2563eb', '#f97316', '#10b981', '#f43f5e', '#8b5cf6', '#14b8a6
 
 function buildMonthKey(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
+}
+
+function normalizeDate(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 export default function AnalysisScreen() {
@@ -23,6 +28,7 @@ export default function AnalysisScreen() {
     passedTestCount: 0,
     totalTestCount: 0,
   });
+  const [programStart, setProgramStart] = useState<Date | null>(null);
   const [dailyReports, setDailyReports] = useState<DailyReportSummary[]>([]);
   const [chapterTests, setChapterTests] = useState<ChapterTestProgress[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,15 +38,11 @@ export default function AnalysisScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [summaryRes, dailyRes, chapterRes] = await Promise.all([
+      const [summaryRes, chapterRes] = await Promise.all([
         fetchJson<MonthlySummary>(`/api/dashboard/stats/monthly-summary?month=${monthKey}`),
-        fetchJson<{ reports: DailyReportSummary[] }>(
-          `/api/dashboard/daily-reports?month=${monthKey}`,
-        ),
         fetchJson<{ chapters: ChapterTestProgress[] }>('/api/dashboard/stats/test-progress'),
       ]);
       setSummary(summaryRes);
-      setDailyReports(dailyRes.reports ?? []);
       setChapterTests(chapterRes.chapters ?? []);
     } catch (err) {
       console.error(err);
@@ -53,7 +55,6 @@ export default function AnalysisScreen() {
         passedTestCount: 0,
         totalTestCount: 0,
       });
-      setDailyReports([]);
       setChapterTests([]);
     } finally {
       setLoading(false);
@@ -64,20 +65,103 @@ export default function AnalysisScreen() {
     loadData();
   }, [loadData]);
 
-  const last7Days = useMemo(() => {
-    const todayKey = formatDateKey(today.getFullYear(), today.getMonth() + 1, today.getDate());
-    const endDate = new Date(todayKey);
-    const startDate = new Date(endDate);
-    startDate.setDate(startDate.getDate() - 6);
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    (async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          if (active) {
+            setProgramStart(normalizeDate(new Date()));
+          }
+          return;
+        }
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('created_at')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (error) throw error;
+        const base = profile?.created_at ? new Date(profile.created_at) : new Date();
+        if (active) {
+          setProgramStart(normalizeDate(base));
+        }
+      } catch (err) {
+        console.error('Failed to load account creation date', err);
+        if (active) {
+          setProgramStart(normalizeDate(new Date()));
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
+  useEffect(() => {
+    if (!programStart) return;
+    let cancelled = false;
+    const start = normalizeDate(programStart);
+    const rangeDates = Array.from({ length: 7 }).map((_, index) => {
+      const current = new Date(start);
+      current.setDate(start.getDate() + index);
+      return current;
+    });
+    const monthKeys = Array.from(new Set(rangeDates.map((date) => buildMonthKey(date))));
+    (async () => {
+      try {
+        const responses = await Promise.all(
+          monthKeys.map((month) =>
+            fetchJson<{ reports: DailyReportSummary[] }>(
+              `/api/dashboard/daily-reports?month=${month}`,
+            ),
+          ),
+        );
+        if (cancelled) return;
+        const reportMap = new Map<string, DailyReportSummary>();
+        responses.forEach((res) => {
+          res.reports?.forEach((report) => {
+            reportMap.set(report.date, report);
+          });
+        });
+        const targetKeys = rangeDates.map((date) =>
+          formatDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate()),
+        );
+        const trimmed: DailyReportSummary[] = [];
+        targetKeys.forEach((key) => {
+          const entry = reportMap.get(key);
+          if (entry) trimmed.push(entry);
+        });
+        setDailyReports(trimmed);
+      } catch (err) {
+        console.error('Failed to load weekly reports', err);
+        if (!cancelled) {
+          setDailyReports([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [programStart]);
+
+  const displayWeekStart = useMemo(
+    () => (programStart ? normalizeDate(programStart) : normalizeDate(today)),
+    [programStart],
+  );
+
+  const last7Days = useMemo(() => {
     const reportMap = new Map<string, DailyReportSummary>();
     dailyReports.forEach((report) => {
       reportMap.set(report.date, report);
     });
 
     return Array.from({ length: 7 }).map((_, index) => {
-      const current = new Date(startDate);
-      current.setDate(startDate.getDate() + index);
+      const current = new Date(displayWeekStart);
+      current.setDate(displayWeekStart.getDate() + index);
       const key = formatDateKey(current.getFullYear(), current.getMonth() + 1, current.getDate());
       const report = reportMap.get(key);
       return {
@@ -88,7 +172,7 @@ export default function AnalysisScreen() {
         hasReport: Boolean(report),
       };
     });
-  }, [dailyReports]);
+  }, [dailyReports, displayWeekStart]);
 
   const maxDailyMinutes = useMemo(() => {
     return Math.max(1, ...last7Days.map((day) => day.totalMinutes));

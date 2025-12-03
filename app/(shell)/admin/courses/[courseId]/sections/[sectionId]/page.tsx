@@ -6,7 +6,11 @@ import { updateSectionMeta, saveSectionContent, softDeleteSection, restoreSectio
 import MarkdownEditor from '@/components/admin/MarkdownEditor';
 
 export default async function SectionDetailPage({ params, searchParams }: { params: { courseId: string; sectionId: string }; searchParams?: Record<string, string | string[] | undefined> }) {
-  await requireRole(['staff','admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
   const supabase = createServerSupabaseClient();
   const { data: lesson } = await supabase
     .from('lessons')

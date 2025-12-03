@@ -9,6 +9,7 @@ export async function setUserDisabledAction(userId: string, disabled: boolean) {
   const { userId: currentUserId } = await requireRole(['admin'], {
     redirectTo: '/ops-login',
     signOutOnFail: true,
+    requireOnboardingComplete: true,
   });
   if (userId === currentUserId) {
     throw new Error('自分自身を停止することはできません。');
@@ -29,6 +30,7 @@ export async function deleteUserAction(userId: string) {
   const { userId: currentUserId } = await requireRole(['admin'], {
     redirectTo: '/ops-login',
     signOutOnFail: true,
+    requireOnboardingComplete: true,
   });
   if (userId === currentUserId) {
     throw new Error('自分自身を削除することはできません。');
@@ -45,7 +47,11 @@ export async function deleteUserAction(userId: string) {
 }
 
 export async function inviteOperatorAction(formData: FormData) {
-  await requireRole(['admin'], { redirectTo: '/ops-login', signOutOnFail: true });
+  await requireRole(['admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
 
   const rawEmail = String(formData.get('email') || '').trim().toLowerCase();
   const role = String(formData.get('role') || 'staff').trim();
