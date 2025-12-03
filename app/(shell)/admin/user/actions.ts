@@ -89,3 +89,87 @@ export async function inviteOperatorAction(formData: FormData) {
 
   revalidatePath('/admin/user');
 }
+
+export async function createProgressLimitAction(formData: FormData) {
+  const { profile } = await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
+  const courseId = String(formData.get('course_id') || '').trim();
+  const chapterId = String(formData.get('chapter_id') || '').trim();
+  const sectionId = String(formData.get('section_id') || '').trim();
+  if (!courseId || !chapterId || !sectionId) {
+    throw new Error('コース / チャプター / セクションを選択してください。');
+  }
+  const supabase = createServerSupabaseClient();
+  const { data: existing } = await supabase
+    .from('progress_limits')
+    .select('id')
+    .eq('section_id', sectionId)
+    .maybeSingle();
+  if (existing) {
+    throw new Error('このセクションはすでに進捗制限に設定されています。');
+  }
+  const { error } = await supabase.from('progress_limits').insert({
+    course_id: courseId,
+    chapter_id: chapterId,
+    section_id: sectionId,
+    created_by: profile.id,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath('/admin/user');
+}
+
+export async function deleteProgressLimitAction(limitId: string) {
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.from('progress_limits').delete().eq('id', limitId);
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath('/admin/user');
+}
+
+export async function setInterviewTagAction(userId: string, completed: boolean) {
+  await requireRole(['staff','admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
+  const adminClient = createServerSupabaseAdminClient();
+  const { error } = await adminClient
+    .from('profiles')
+    .update({ interview_completed: completed, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath('/admin/user');
+}
+
+export async function setOpsTagAction(userId: string, tagged: boolean) {
+  await requireRole(['admin'], {
+    redirectTo: '/ops-login',
+    signOutOnFail: true,
+    requireOnboardingComplete: true,
+  });
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase
+    .from('profiles')
+    .update({ ops_tagged: tagged, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (error) {
+    if (String(error.message || '').includes('ops_tagged')) {
+      throw new Error('運営タグ用のカラムがまだ作成されていません。最新のDBマイグレーション（ops_tagged追加）を適用してください。');
+    }
+    throw new Error(error.message);
+  }
+  revalidatePath('/admin/user');
+}

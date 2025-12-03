@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { SECTION_COMPLETED_EVENT } from '@/lib/learners/events';
+import { useInterviewStatus } from '@/hooks/useInterviewStatus';
 
 type Chapter = { id: string; title: string; chapter_sort_key: number };
 type Section = { id: string; title: string; section_sort_key: number; is_completed?: boolean };
@@ -13,7 +14,9 @@ type SectionTocProps = {
   courseId: string;
   currentSectionId: string;
   completedSectionIds?: string[];
+  lockedSectionIds?: string[];
   className?: string;
+  initialInterviewCompleted?: boolean;
 };
 
 export default function SectionToc({
@@ -22,15 +25,28 @@ export default function SectionToc({
   courseId,
   currentSectionId,
   completedSectionIds = [],
+  lockedSectionIds = [],
   className = '',
+  initialInterviewCompleted = false,
 }: SectionTocProps) {
   const [completedSet, setCompletedSet] = useState<Set<string>>(() => new Set(completedSectionIds));
+  const [lockedSet, setLockedSet] = useState<Set<string>>(() => new Set(lockedSectionIds));
+  const interviewCompleted = useInterviewStatus(initialInterviewCompleted);
 
   const completedKey = useMemo(() => [...completedSectionIds].sort().join('|'), [completedSectionIds]);
+  const lockedKey = useMemo(() => [...lockedSectionIds].sort().join('|'), [lockedSectionIds]);
 
   useEffect(() => {
     setCompletedSet(new Set(completedSectionIds));
   }, [completedKey, completedSectionIds]);
+
+  useEffect(() => {
+    if (interviewCompleted) {
+      setLockedSet(new Set());
+    } else {
+      setLockedSet(new Set(lockedSectionIds));
+    }
+  }, [interviewCompleted, lockedKey, lockedSectionIds]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -67,7 +83,20 @@ export default function SectionToc({
               {(sectionsByChapter[ch.id] || []).map((s) => {
                 const active = s.id === currentSectionId;
                 const isCompleted = completedLookup.has(s.id) || s.is_completed;
+                const isLocked = lockedSet.has(s.id);
                 const label = isCompleted ? `✅ ${s.title}` : s.title;
+                if (isLocked && !active) {
+                  return (
+                    <li key={s.id}>
+                      <div
+                        className="flex h-9 items-center rounded-lg pl-6 pr-2 text-xs text-[color:var(--muted)] opacity-70"
+                        aria-disabled="true"
+                      >
+                        <span className="inline-block max-w-[18rem] truncate align-middle">🔒 {s.title}</span>
+                      </div>
+                    </li>
+                  );
+                }
                 return (
                   <li key={s.id}>
                     <Link

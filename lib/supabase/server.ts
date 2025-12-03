@@ -44,4 +44,6 @@ export type Profile = {
   onboarding_completed?: boolean | null;
   created_at: string | null;
   updated_at: string | null;
+  ops_tagged?: boolean | null;
+  interview_completed?: boolean | null;
 };

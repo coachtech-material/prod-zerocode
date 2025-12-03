@@ -17,6 +17,7 @@ export type SectionPageData = {
   progress: Array<Record<string, any>>;
   section: LessonMeta;
   content_md: string;
+  limits: Array<{ section_id: string }>;
 };
 
 export async function getAllPublishedCoursesWithTotals() {
@@ -54,6 +55,7 @@ export async function getCourseTree(courseId: string, userId: string, client?: S
     { data: chapters },
     { data: lessons },
     { data: progress },
+    { data: limits },
   ] = await Promise.all([
     supabase
       .from('courses')
@@ -81,10 +83,14 @@ export async function getCourseTree(courseId: string, userId: string, client?: S
       .select('lesson_id,is_unlocked,is_completed')
       .eq('course_id', courseId)
       .eq('user_id', userId),
+    supabase
+      .from('progress_limits')
+      .select('section_id')
+      .eq('course_id', courseId),
   ]);
   if (!course) return null;
 
-  return { course, chapters: chapters || [], lessons: lessons || [], progress: progress || [] };
+  return { course, chapters: chapters || [], lessons: lessons || [], progress: progress || [], limits: limits || [] };
 }
 
 export async function getSectionPageData(
@@ -101,6 +107,7 @@ export async function getSectionPageData(
     { data: lessons },
     { data: progress },
     { data: sectionDetail },
+    { data: limits },
   ] = await Promise.all([
     supabase
       .from('courses')
@@ -135,6 +142,7 @@ export async function getSectionPageData(
       .eq('course_id', courseId)
       .eq('status', 'published')
       .maybeSingle(),
+    supabase.from('progress_limits').select('section_id').eq('course_id', courseId),
   ]);
 
   if (!course || !sectionDetail) return null;
@@ -148,5 +156,6 @@ export async function getSectionPageData(
     progress: (progress || []) as Array<Record<string, any>>,
     section,
     content_md: content_md || '',
+    limits: (limits || []) as Array<{ section_id: string }>,
   };
 }

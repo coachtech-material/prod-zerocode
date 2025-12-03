@@ -57,6 +57,8 @@ export async function GET() {
     phone: string | null;
     issued_at: string | null;
     login_disabled: boolean;
+    ops_tagged: boolean;
+    interview_completed: boolean;
   };
 
   const students: StudentSummary[] =
@@ -71,6 +73,8 @@ export async function GET() {
       phone: (r.phone as string | null) ?? null,
       issued_at: (r.issued_at as string | null) ?? null,
       login_disabled: !!r.login_disabled,
+      ops_tagged: !!r.ops_tagged,
+      interview_completed: !!r.interview_completed,
     })) ?? [];
 
   const studentIds = students.map((student) => student.id);

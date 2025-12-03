@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, useTransition } from 'react';
 import { markSectionCompleted } from '@/app/(shell)/courses/[courseId]/sections/[sectionId]/actions';
 import { SECTION_COMPLETED_EVENT } from '@/lib/learners/events';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useInterviewStatus } from '@/hooks/useInterviewStatus';
 
 type NavItem = { id: string; title: string } | null;
 
@@ -15,6 +16,9 @@ type SectionCompletionPanelProps = {
   initialCompleted: boolean;
   prev: NavItem;
   next: NavItem;
+  nextLocked?: boolean;
+  locksAfterCompletion?: boolean;
+  initialInterviewCompleted?: boolean;
 };
 
 export default function SectionCompletionPanel({
@@ -23,6 +27,9 @@ export default function SectionCompletionPanel({
   initialCompleted,
   prev,
   next,
+  nextLocked = false,
+  locksAfterCompletion = false,
+  initialInterviewCompleted = false,
 }: SectionCompletionPanelProps) {
   const [completed, setCompleted] = useState(initialCompleted);
   const [showModal, setShowModal] = useState(false);
@@ -30,6 +37,8 @@ export default function SectionCompletionPanel({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [mounted, setMounted] = useState(false);
+  const [localNextLocked, setLocalNextLocked] = useState(nextLocked);
+  const interviewCompleted = useInterviewStatus(initialInterviewCompleted);
 
   useScrollLock(showModal);
 
@@ -40,6 +49,16 @@ export default function SectionCompletionPanel({
   useEffect(() => {
     setCompleted(initialCompleted);
   }, [initialCompleted]);
+
+  useEffect(() => {
+    setLocalNextLocked(nextLocked);
+  }, [nextLocked]);
+
+  useEffect(() => {
+    if (interviewCompleted) {
+      setLocalNextLocked(false);
+    }
+  }, [interviewCompleted]);
 
   useEffect(() => {
     if (completed) return;
@@ -68,6 +87,9 @@ export default function SectionCompletionPanel({
         }
         setCompleted(true);
         setModalStatus('success');
+        if (locksAfterCompletion && !interviewCompleted) {
+          setLocalNextLocked(true);
+        }
         window.dispatchEvent(new CustomEvent(SECTION_COMPLETED_EVENT, { detail: { sectionId } }));
       } catch (err: any) {
         setShowModal(false);
@@ -109,12 +131,18 @@ export default function SectionCompletionPanel({
             <div className="hidden sm:block" />
           )}
           {next ? (
-            <Link
-              href={`/courses/${courseId}/sections/${next.id}`}
-              className="rounded-2xl bg-[color:var(--brand)]/24 px-4 py-2.5 text-base font-semibold text-[color:var(--text)] focus-ring hover:bg-[color:var(--brand)]/32"
-            >
-              次へ: {next.title} →
-            </Link>
+            localNextLocked ? (
+              <div className="rounded-2xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-sm text-amber-100">
+                次へ: {next.title}（中間面談が完了するまで進めません）
+              </div>
+            ) : (
+              <Link
+                href={`/courses/${courseId}/sections/${next.id}`}
+                className="rounded-2xl bg-[color:var(--brand)]/24 px-4 py-2.5 text-base font-semibold text-[color:var(--text)] focus-ring hover:bg-[color:var(--brand)]/32"
+              >
+                次へ: {next.title} →
+              </Link>
+            )
           ) : (
             <div className="hidden sm:block" />
           )}
@@ -161,13 +189,19 @@ export default function SectionCompletionPanel({
                           <div className="hidden sm:block" />
                         )}
                         {next ? (
-                          <Link
-                            href={`/courses/${courseId}/sections/${next.id}`}
-                            className="rounded-xl bg-[color:var(--brand)]/24 px-4 py-2 text-sm font-semibold text-[color:var(--text)] transition hover:bg-[color:var(--brand)]/30"
-                            onClick={closeModal}
-                          >
-                            次の教材に進む →
-                          </Link>
+                          localNextLocked ? (
+                            <div className="rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-100">
+                              次の教材は中間面談が完了するまで閲覧できません
+                            </div>
+                          ) : (
+                            <Link
+                              href={`/courses/${courseId}/sections/${next.id}`}
+                              className="rounded-xl bg-[color:var(--brand)]/24 px-4 py-2 text-sm font-semibold text-[color:var(--text)] transition hover:bg-[color:var(--brand)]/30"
+                              onClick={closeModal}
+                            >
+                              次の教材に進む →
+                            </Link>
+                          )
                         ) : (
                           <div className="hidden sm:block" />
                         )}

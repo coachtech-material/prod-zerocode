@@ -251,7 +251,7 @@ $$;
 ALTER FUNCTION "public"."ops_list_users"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."ops_list_users_with_status"() RETURNS TABLE("id" "uuid", "first_name" "text", "last_name" "text", "email" "text", "role" "text", "last_sign_in_at" timestamp with time zone, "inactive" boolean, "phone" "text", "issued_at" timestamp with time zone, "login_disabled" boolean)
+CREATE OR REPLACE FUNCTION "public"."ops_list_users_with_status"() RETURNS TABLE("id" "uuid", "first_name" "text", "last_name" "text", "email" "text", "role" "text", "last_sign_in_at" timestamp with time zone, "inactive" boolean, "phone" "text", "issued_at" timestamp with time zone, "login_disabled" boolean, "ops_tagged" boolean, "interview_completed" boolean)
     LANGUAGE "sql" SECURITY DEFINER
     SET "search_path" TO 'public', 'auth'
     AS $$
@@ -264,7 +264,9 @@ CREATE OR REPLACE FUNCTION "public"."ops_list_users_with_status"() RETURNS TABLE
          coalesce(coalesce(p.last_active_at, u.last_sign_in_at) < (now() - interval '24 hours'), true) as inactive,
          coalesce(p.phone, u.phone) as phone,
          p.created_at as issued_at,
-         coalesce(p.login_disabled, false) as login_disabled
+         coalesce(p.login_disabled, false) as login_disabled,
+         coalesce(p.ops_tagged, false) as ops_tagged,
+         coalesce(p.interview_completed, false) as interview_completed
   from public.profiles p
   left join auth.users u on u.id = p.id
   where exists (
@@ -514,11 +516,27 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "onboarding_step" integer DEFAULT 0 NOT NULL,
     "onboarding_completed" boolean DEFAULT false NOT NULL,
     "login_disabled" boolean DEFAULT false NOT NULL,
+    "ops_tagged" boolean DEFAULT false NOT NULL,
+    "interview_completed" boolean DEFAULT false NOT NULL,
     CONSTRAINT "profiles_role_check" CHECK (("role" = ANY (ARRAY['user'::"text", 'staff'::"text", 'admin'::"text"])))
 );
 
 
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."progress_limits" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "course_id" "uuid" NOT NULL,
+    "chapter_id" "uuid" NOT NULL,
+    "section_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid"
+);
+
+
+ALTER TABLE "public"."progress_limits" OWNER TO "postgres";
+
+ALTER TABLE "public"."progress_limits" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE TABLE IF NOT EXISTS "public"."progress" (
@@ -629,6 +647,11 @@ ALTER TABLE ONLY "public"."profiles"
 
 
 
+ALTER TABLE ONLY "public"."progress_limits"
+    ADD CONSTRAINT "progress_limits_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."progress"
     ADD CONSTRAINT "progress_pkey" PRIMARY KEY ("id");
 
@@ -661,6 +684,10 @@ CREATE UNIQUE INDEX "daily_reports_user_date_key" ON "public"."daily_reports" US
 
 
 
+CREATE UNIQUE INDEX "progress_limits_section_id_idx" ON "public"."progress_limits" USING "btree" ("section_id");
+
+
+
 CREATE INDEX "idx_tests_course_chapter" ON "public"."tests" USING "btree" ("course_id", "chapter_id");
 
 
@@ -678,6 +705,26 @@ CREATE OR REPLACE TRIGGER "monthly_goals_set_updated_at" BEFORE UPDATE ON "publi
 
 
 CREATE OR REPLACE TRIGGER "trg_profiles_touch" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."touch_updated_at"();
+
+
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'progress_limits' AND policyname = 'progress_limits_delete_staff') THEN
+    EXECUTE 'CREATE POLICY "progress_limits_delete_staff" ON "public"."progress_limits" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "me"
+  WHERE (("me"."id" = "auth"."uid"()) AND (("me"."role")::"text" = ANY (ARRAY[(''staff''::character varying)::"text", (''admin''::character varying)::"text"])))))) )';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'progress_limits' AND policyname = 'progress_limits_insert_staff') THEN
+    EXECUTE 'CREATE POLICY "progress_limits_insert_staff" ON "public"."progress_limits" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "me"
+  WHERE (("public"."me"."id" = "auth"."uid"()) AND (("public"."me"."role")::"text" = ANY (ARRAY[(''staff''::character varying)::"text", (''admin''::character varying)::"text"])))))))';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'progress_limits' AND policyname = 'progress_limits_select_any') THEN
+    EXECUTE 'CREATE POLICY "progress_limits_select_any" ON "public"."progress_limits" FOR SELECT TO "authenticated" USING (true)';
+  END IF;
+END
+$$;
 
 
 
@@ -778,6 +825,26 @@ ALTER TABLE ONLY "public"."progress"
 
 ALTER TABLE ONLY "public"."progress"
     ADD CONSTRAINT "progress_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."progress_limits"
+    ADD CONSTRAINT "progress_limits_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."progress_limits"
+    ADD CONSTRAINT "progress_limits_chapter_id_fkey" FOREIGN KEY ("chapter_id") REFERENCES "public"."chapters"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."progress_limits"
+    ADD CONSTRAINT "progress_limits_section_id_fkey" FOREIGN KEY ("section_id") REFERENCES "public"."lessons"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."progress_limits"
+    ADD CONSTRAINT "progress_limits_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
 
 
@@ -1021,6 +1088,14 @@ CREATE POLICY "profiles_self_select" ON "public"."profiles" FOR SELECT TO "authe
 
 
 CREATE POLICY "profiles_self_update" ON "public"."profiles" FOR UPDATE TO "authenticated" USING (("id" = "auth"."uid"())) WITH CHECK (("id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "profiles_staff_admin_update" ON "public"."profiles" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "me"
+  WHERE (("me"."id" = "auth"."uid"()) AND (("me"."role")::"text" = ANY (ARRAY[('staff'::character varying)::"text", ('admin'::character varying)::"text"])))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."profiles" "me"
+  WHERE (("me"."id" = "auth"."uid"()) AND (("me"."role")::"text" = ANY (ARRAY[('staff'::character varying)::"text", ('admin'::character varying)::"text"]))))));
 
 
 

@@ -7,6 +7,7 @@ const USER_LIFETIME_MS = 21 * 24 * 60 * 60 * 1000; // 3 weeks
 
 async function enforceUserLifetime(profile: Profile, supabase: SupabaseClient) {
   if (profile.role !== 'user') return;
+  if (profile.ops_tagged) return;
   if (!profile.created_at) return;
   const createdAt = Date.parse(profile.created_at);
   if (!Number.isFinite(createdAt)) return;
@@ -38,20 +39,7 @@ export async function requireAuth(): Promise<{ userId: string; supabase: Supabas
 }
 
 async function resolveProfile(supabase: SupabaseClient, userId: string): Promise<Profile> {
-  const columnSelection = `
-    id,
-    role,
-    full_name,
-    first_name,
-    last_name,
-    avatar_url,
-    phone,
-    login_disabled,
-    onboarding_step,
-    onboarding_completed,
-    created_at,
-    updated_at
-  `;
+  const columnSelection = '*';
   const { data, error } = await supabase
     .from('profiles')
     .select(columnSelection)
@@ -60,11 +48,16 @@ async function resolveProfile(supabase: SupabaseClient, userId: string): Promise
   if (!error && data) return data as Profile;
 
   // Create default profile if not exist (RLS allows only self insert/update if logged-in)
-  const { data: upserted, error: upsertError } = await supabase
-    .from('profiles')
-    .upsert({ id: userId }, { onConflict: 'id' })
-    .select(columnSelection)
-    .single();
+  const attemptUpsert = (includeOpsTag: boolean) =>
+    supabase
+      .from('profiles')
+      .upsert(includeOpsTag ? { id: userId, ops_tagged: false } : { id: userId }, { onConflict: 'id' })
+      .select(columnSelection)
+      .single();
+  let { data: upserted, error: upsertError } = await attemptUpsert(true);
+  if (upsertError && String(upsertError.message || '').includes('ops_tagged')) {
+    ({ data: upserted, error: upsertError } = await attemptUpsert(false));
+  }
   if (upsertError || !upserted) throw new Error('Failed to create profile');
   return upserted as Profile;
 }

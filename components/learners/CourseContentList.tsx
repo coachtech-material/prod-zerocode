@@ -1,6 +1,7 @@
 "use client";
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useInterviewStatus } from '@/hooks/useInterviewStatus';
 
 type Chapter = {
   id: string;
@@ -21,12 +22,19 @@ export default function CourseContentList({
   chapters,
   sectionsByChapter,
   courseId,
+  lockedSectionIds = [],
+  initialInterviewCompleted = false,
 }: {
   chapters: Chapter[];
   sectionsByChapter: Record<string, Section[]>;
   courseId: string;
+  lockedSectionIds?: string[];
+  initialInterviewCompleted?: boolean;
 }) {
   const router = useRouter();
+  const interviewCompleted = useInterviewStatus(initialInterviewCompleted);
+  const lockedKey = lockedSectionIds.slice().sort().join('|');
+  const lockedSet = useMemo(() => (interviewCompleted ? new Set<string>() : new Set(lockedSectionIds)), [interviewCompleted, lockedKey]);
 
   const orderedSections = useMemo(() => {
     const out: Record<string, Section[]> = {};
@@ -61,23 +69,35 @@ export default function CourseContentList({
                 </thead>
                 <tbody>
                   {orderedSections[ch.id].map((s) => {
-                    const statusLabel = s.is_completed ? '学習済み' : '学習可';
+                    const isLocked = lockedSet.has(s.id);
+                    const statusLabel = isLocked ? '面談待ち' : s.is_completed ? '学習済み' : '学習可';
                     const statusClass = s.is_completed
                       ? 'border-[color:var(--success)]/50 bg-[color:var(--success)]/15 text-[color:var(--success)]'
-                      : 'border-[color:var(--brand)]/50 bg-[color:var(--brand)]/12 text-[color:var(--brand)]';
+                      : isLocked
+                        ? 'border-amber-500/40 bg-amber-500/15 text-amber-200'
+                        : 'border-[color:var(--brand)]/50 bg-[color:var(--brand)]/12 text-[color:var(--brand)]';
                     return (
                       <tr
                         key={s.id}
-                        className="group cursor-pointer border-t border-[color:var(--line)] transition hover:bg-[color:var(--brand)]/10 focus:bg-[color:var(--brand)]/12 focus:outline-none"
-                        onClick={() => router.push(`/courses/${courseId}/sections/${s.id}`)}
+                        className={[
+                          'group border-t border-[color:var(--line)] transition',
+                          isLocked
+                            ? 'cursor-not-allowed bg-[color:var(--surface-1)]/40 text-[color:var(--muted)]'
+                            : 'cursor-pointer hover:bg-[color:var(--brand)]/10 focus:bg-[color:var(--brand)]/12 focus:outline-none',
+                        ].join(' ')}
+                        onClick={() => {
+                          if (isLocked) return;
+                          router.push(`/courses/${courseId}/sections/${s.id}`);
+                        }}
                         onKeyDown={(event) => {
+                          if (isLocked) return;
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
                             router.push(`/courses/${courseId}/sections/${s.id}`);
                           }
                         }}
                         role="button"
-                        tabIndex={0}
+                        tabIndex={isLocked ? -1 : 0}
                       >
                         <td className="px-4 py-2 text-[color:var(--muted)]">{s.section_sort_key}</td>
                         <td className="px-4 py-2 text-[color:var(--text)]">
@@ -106,16 +126,26 @@ export default function CourseContentList({
             </div>
             <div className="space-y-2 border-t border-[color:var(--line)] px-4 py-4 sm:hidden">
               {orderedSections[ch.id].map((s) => {
-                const statusLabel = s.is_completed ? '学習済み' : '学習可';
+                const isLocked = lockedSet.has(s.id);
+                const statusLabel = isLocked ? '面談待ち' : s.is_completed ? '学習済み' : '学習可';
                 const statusClass = s.is_completed
                   ? 'border-[color:var(--success)]/50 bg-[color:var(--success)]/15 text-[color:var(--success)]'
-                  : 'border-[color:var(--brand)]/50 bg-[color:var(--brand)]/12 text-[color:var(--brand)]';
+                  : isLocked
+                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-200'
+                    : 'border-[color:var(--brand)]/50 bg-[color:var(--brand)]/12 text-[color:var(--brand)]';
                 return (
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => router.push(`/courses/${courseId}/sections/${s.id}`)}
-                    className="w-full rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)]/80 p-4 text-left text-sm transition hover:border-[color:var(--brand)] hover:bg-[color:var(--surface-1)] focus-ring"
+                    onClick={() => {
+                      if (isLocked) return;
+                      router.push(`/courses/${courseId}/sections/${s.id}`);
+                    }}
+                    disabled={isLocked}
+                    className={[
+                      'w-full rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-1)]/80 p-4 text-left text-sm transition focus-ring',
+                      isLocked ? 'cursor-not-allowed opacity-70' : 'hover:border-[color:var(--brand)] hover:bg-[color:var(--surface-1)]',
+                    ].join(' ')}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <span className="inline-flex items-center gap-2 text-xs text-[color:var(--muted)]">

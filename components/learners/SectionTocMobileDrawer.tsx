@@ -13,6 +13,8 @@ type Props = {
   courseId: string;
   currentSectionId: string;
   completedSectionIds?: string[];
+  lockedSectionIds?: string[];
+  initialInterviewCompleted?: boolean;
 };
 
 export default function SectionTocMobileDrawer({
@@ -21,6 +23,8 @@ export default function SectionTocMobileDrawer({
   courseId,
   currentSectionId,
   completedSectionIds,
+  lockedSectionIds,
+  initialInterviewCompleted = false,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -42,7 +46,9 @@ export default function SectionTocMobileDrawer({
             courseId={courseId}
             currentSectionId={currentSectionId}
             completedSectionIds={completedSectionIds}
+            lockedSectionIds={lockedSectionIds}
             className="space-y-2"
+            initialInterviewCompleted={initialInterviewCompleted}
           />
         </div>
       )}

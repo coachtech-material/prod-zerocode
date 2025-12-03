@@ -12,13 +12,13 @@ import Link from 'next/link';
 export const preferredRegion = ['hnd1'];
 
 export default async function SectionView({ params }: { params: { courseId: string; sectionId: string } }) {
-  const { userId } = await requireRole(['user']);
+  const { userId, profile } = await requireRole(['user']);
   const payload = await getSectionPageData(params.courseId, params.sectionId, userId);
   if (!payload) {
     return <div className="surface-card rounded-xl p-4 text-[color:var(--text)]">閲覧できません。</div>;
   }
 
-  const { course, chapters, lessons, progress, section, content_md } = payload;
+  const { course, chapters, lessons, progress, section, content_md, limits } = payload;
   const html = await renderMarkdownForView(content_md || '');
   const sendTime = addTimeSpent.bind(null, params.courseId, params.sectionId);
 
@@ -56,6 +56,57 @@ export default async function SectionView({ params }: { params: { courseId: stri
   const sectionProgress = progressMap.get(params.sectionId);
   const isCompleted = Boolean(sectionProgress?.is_completed);
   if (isCompleted) completedSectionIds.add(params.sectionId);
+
+  const limitIds = new Set((limits || []).map((limit) => limit.section_id));
+  const limitIndexMap = new Map<string, number>();
+  ordered.forEach((item, orderIndex) => {
+    if (limitIds.has(item.id)) {
+      limitIndexMap.set(item.id, orderIndex);
+    }
+  });
+  let highestLimitReached = -1;
+  ordered.forEach((item, orderIndex) => {
+    if (!limitIds.has(item.id)) return;
+    const prog = progressMap.get(item.id);
+    if (prog?.is_completed || prog?.is_unlocked) {
+      highestLimitReached = Math.max(highestLimitReached, orderIndex);
+    }
+  });
+  if (!profile.interview_completed && idx >= 0) {
+    for (const [, limitIndex] of limitIndexMap) {
+      if (limitIndex <= idx) {
+        highestLimitReached = Math.max(highestLimitReached, limitIndex);
+      }
+    }
+    const currentLimitIndex = limitIndexMap.get(params.sectionId);
+    if (typeof currentLimitIndex === 'number') {
+      highestLimitReached = Math.max(highestLimitReached, currentLimitIndex);
+    }
+  }
+  const lockedSections = new Set<string>();
+  if (!profile.interview_completed && highestLimitReached >= 0) {
+    for (let i = highestLimitReached + 1; i < ordered.length; i++) {
+      lockedSections.add(ordered[i].id);
+    }
+  }
+  const shouldBlock = lockedSections.has(params.sectionId);
+
+  if (shouldBlock) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 rounded-3xl border border-white/10 bg-[color:var(--surface-1)] p-6 text-center shadow-[0_15px_35px_rgba(0,0,0,0.35)]">
+        <h1 className="text-xl font-semibold text-[color:var(--text)]">この先の教材はまだ表示できません</h1>
+        <p className="text-sm text-[color:var(--muted)]">
+          この先の教材を閲覧するためには、LINEにて担当者に中間面談を実施する旨を伝えてください🙇
+        </p>
+        <Link
+          href="/courses"
+          className="inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow hover:bg-brand/90 focus-ring"
+        >
+          コース一覧に戻る
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 lg:px-0">
@@ -99,6 +150,8 @@ export default async function SectionView({ params }: { params: { courseId: stri
             courseId={params.courseId}
             currentSectionId={params.sectionId}
             completedSectionIds={Array.from(completedSectionIds)}
+            lockedSectionIds={Array.from(lockedSections)}
+            initialInterviewCompleted={!!profile.interview_completed}
           />
           <div>
             <div className="border-t border-[color:var(--line)]" />
@@ -118,6 +171,8 @@ export default async function SectionView({ params }: { params: { courseId: stri
                   courseId={params.courseId}
                   currentSectionId={params.sectionId}
                   completedSectionIds={Array.from(completedSectionIds)}
+                  lockedSectionIds={Array.from(lockedSections)}
+                  initialInterviewCompleted={!!profile.interview_completed}
                 />
               </div>
             </div>
@@ -128,6 +183,9 @@ export default async function SectionView({ params }: { params: { courseId: stri
             initialCompleted={isCompleted}
             prev={prev}
             next={next}
+            nextLocked={Boolean(next && lockedSections.has(next.id))}
+            locksAfterCompletion={!profile.interview_completed && limitIds.has(params.sectionId)}
+            initialInterviewCompleted={!!profile.interview_completed}
           />
         </div>
       </div>

@@ -1,7 +1,8 @@
 "use client";
-import { useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { setUserDisabledAction, deleteUserAction } from '@/app/(shell)/admin/user/actions';
+import { setUserDisabledAction, deleteUserAction, setOpsTagAction, setInterviewTagAction } from '@/app/(shell)/admin/user/actions';
+import { INTERVIEW_TAG_UPDATED_EVENT } from '@/components/admin/adminEvents';
 
 type Row = {
   id: string;
@@ -14,6 +15,8 @@ type Row = {
   phone?: string | null;
   issued_at?: string | null;
   login_disabled?: boolean;
+  ops_tagged?: boolean;
+  interview_completed?: boolean;
 };
 
 type TableProps = {
@@ -22,6 +25,8 @@ type TableProps = {
   showPhone?: boolean;
   showStatus?: boolean;
   renderActions?: (row: Row) => ReactNode;
+  opsTagOverrides?: Record<string, boolean>;
+  interviewOverrides?: Record<string, boolean>;
 };
 
 function StatusBadge({ row }: { row: Row }) {
@@ -46,7 +51,7 @@ function StatusBadge({ row }: { row: Row }) {
   );
 }
 
-function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableProps) {
+function Table({ rows, showEmail, showPhone, showStatus, renderActions, opsTagOverrides, interviewOverrides }: TableProps) {
   const today = Date.now();
   const totalCols =
     5 +
@@ -74,11 +79,17 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
-              {rows.map((row) => {
-                const name =
-                  [row.last_name || '', row.first_name || ''].filter(Boolean).join(' ').trim() ||
-                  '(未設定)';
-                const issuedDate = row.issued_at ? new Date(row.issued_at) : null;
+            {rows.map((row) => {
+              const name =
+                [row.last_name || '', row.first_name || ''].filter(Boolean).join(' ').trim() ||
+                '(未設定)';
+              const opsActive =
+                (opsTagOverrides && row.id in opsTagOverrides ? opsTagOverrides[row.id] : undefined) ?? row.ops_tagged;
+              const interviewActive =
+                (interviewOverrides && row.id in interviewOverrides
+                  ? interviewOverrides[row.id]
+                  : undefined) ?? row.interview_completed;
+              const issuedDate = row.issued_at ? new Date(row.issued_at) : null;
                 const issuedDisplay = issuedDate ? issuedDate.toLocaleDateString('ja-JP') : '-';
                 const dayCount = issuedDate
                   ? Math.max(1, Math.floor((today - issuedDate.getTime()) / 86400000) + 1)
@@ -99,7 +110,21 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
                       <code>{row.role}</code>
                     </td>
                     <td className="px-3 py-2 text-[color:var(--muted)]">
-                      <code className="break-all">{row.id}</code>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--muted)]">
+                        <code className="break-all text-[11px] text-[color:var(--muted)]">{row.id}</code>
+                        {opsActive ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-brand text-[10px] font-semibold text-white px-2 py-0.5">
+                      <span className="inline-block h-2 w-2 rounded-full bg-white" />
+                      運営
+                    </span>
+                  ) : null}
+                        {interviewActive ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 text-[10px] font-semibold text-white px-2 py-0.5">
+                            <span className="inline-block h-2 w-2 rounded-full bg-white" />
+                            面談済
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     {renderActions && (
                       <td className="px-3 py-2 text-right align-middle">{renderActions(row)}</td>
@@ -124,6 +149,12 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
             [row.last_name || '', row.first_name || ''].filter(Boolean).join(' ').trim() ||
             '(未設定)';
           const issuedDate = row.issued_at ? new Date(row.issued_at) : null;
+          const opsActive =
+            (opsTagOverrides && row.id in opsTagOverrides ? opsTagOverrides[row.id] : undefined) ?? row.ops_tagged;
+          const interviewActive =
+            (interviewOverrides && row.id in interviewOverrides
+              ? interviewOverrides[row.id]
+              : undefined) ?? row.interview_completed;
           const dayCount = issuedDate
             ? Math.max(1, Math.floor((today - issuedDate.getTime()) / 86400000) + 1)
             : null;
@@ -153,7 +184,21 @@ function Table({ rows, showEmail, showPhone, showStatus, renderActions }: TableP
               </div>
               <div className="mt-2 flex items-center justify-between">
                 {showStatus ? <StatusBadge row={row} /> : <span />}
-                <code className="break-all text-[11px] text-[color:var(--muted)]">{row.id}</code>
+                <div className="flex items-center gap-2">
+                  <code className="break-all text-[11px] text-[color:var(--muted)]">{row.id}</code>
+                  {opsActive ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-brand text-[10px] font-semibold text-white px-2 py-0.5">
+                      <span className="inline-block h-2 w-2 rounded-full bg-white" />
+                      運営
+                    </span>
+                  ) : null}
+                  {interviewActive ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 text-[10px] font-semibold text-white px-2 py-0.5">
+                      <span className="inline-block h-2 w-2 rounded-full bg-white" />
+                      面談済
+                    </span>
+                  ) : null}
+                </div>
               </div>
               {actions ? <div className="mt-3 flex justify-end gap-2">{actions}</div> : null}
             </div>
@@ -183,6 +228,19 @@ export default function UserTabs({
   const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [opsTagOverrides, setOpsTagOverrides] = useState<Record<string, boolean>>({});
+  const [interviewOverrides, setInterviewOverrides] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const listener: EventListener = (event) => {
+      const { detail } = event as CustomEvent<{ userId: string; completed: boolean }>;
+      if (!detail) return;
+      setInterviewOverrides((prev) => ({ ...prev, [detail.userId]: detail.completed }));
+    };
+    window.addEventListener(INTERVIEW_TAG_UPDATED_EVENT, listener);
+    return () => {
+      window.removeEventListener(INTERVIEW_TAG_UPDATED_EVENT, listener);
+    };
+  }, []);
 
   const handleToggleDisabled = (row: Row, disabled: boolean) => {
     setMessage(null);
@@ -195,6 +253,45 @@ export default function UserTabs({
       } catch (error: any) {
         console.error(error);
         setMessage(error?.message ?? '操作に失敗しました。');
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  };
+
+  const handleToggleOpsTag = (row: Row, tagged: boolean) => {
+    setMessage(null);
+    setPendingAction(`${row.id}-ops-tag`);
+    startTransition(async () => {
+      try {
+        await setOpsTagAction(row.id, tagged);
+        setOpsTagOverrides((prev) => ({ ...prev, [row.id]: tagged }));
+        router.refresh();
+        setMessage(tagged ? '運営タグを付与しました。' : '運営タグを解除しました。');
+      } catch (error: any) {
+        console.error(error);
+        setMessage(error?.message ?? '運営タグの更新に失敗しました。');
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  };
+
+  const handleToggleInterview = (row: Row, completed: boolean) => {
+    setMessage(null);
+    setPendingAction(`${row.id}-interview`);
+    startTransition(async () => {
+      try {
+        await setInterviewTagAction(row.id, completed);
+        setInterviewOverrides((prev) => ({ ...prev, [row.id]: completed }));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(INTERVIEW_TAG_UPDATED_EVENT, { detail: { userId: row.id, completed } }));
+        }
+        router.refresh();
+        setMessage(completed ? '中間面談タグを付与しました。' : '中間面談タグを解除しました。');
+      } catch (error: any) {
+        console.error(error);
+        setMessage(error?.message ?? '中間面談タグの更新に失敗しました。');
       } finally {
         setPendingAction(null);
       }
@@ -220,31 +317,69 @@ export default function UserTabs({
   };
 
   const renderStudentActions = (row: Row) => {
-    if (viewerRole !== 'admin') return null;
+    const canAdminister = viewerRole === 'admin';
+    const canToggleInterview = viewerRole === 'admin' || viewerRole === 'staff';
+    if (!canAdminister && !canToggleInterview) return null;
     const pending = isPending && pendingAction?.startsWith(row.id);
+    const opsActive = opsTagOverrides[row.id] ?? row.ops_tagged;
+    const interviewActive = interviewOverrides[row.id] ?? row.interview_completed;
     return (
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => handleToggleDisabled(row, !row.login_disabled)}
-          disabled={pending}
-          className={[
-            'rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60',
-            row.login_disabled
-              ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
-              : 'bg-rose-500/15 text-rose-600 hover:bg-rose-500/25',
-          ].join(' ')}
-        >
-          {row.login_disabled ? '再開' : '停止'}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleDelete(row)}
-          disabled={pending}
-          className="rounded-md bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-100 shadow-sm transition hover:bg-rose-500/30 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          削除
-        </button>
+      <div className="flex flex-wrap justify-end gap-2">
+        {canToggleInterview && (
+          <button
+            type="button"
+            onClick={() => handleToggleInterview(row, !interviewActive)}
+            disabled={pending}
+            className={[
+              'flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60',
+              interviewActive
+                ? 'bg-emerald-500 text-white hover:bg-emerald-500/90'
+                : 'bg-white/10 text-emerald-300 hover:bg-emerald-500/10',
+            ].join(' ')}
+          >
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: interviewActive ? '#34d399' : 'rgba(255,255,255,0.5)' }} />
+            {interviewActive ? '面談タグ: 有効' : '面談タグ: 無効'}
+          </button>
+        )}
+        {canAdminister && (
+          <>
+            <button
+              type="button"
+              onClick={() => handleToggleOpsTag(row, !opsActive)}
+              disabled={pending}
+              className={[
+                'flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60',
+                opsActive
+                  ? 'bg-brand text-white hover:bg-brand/90'
+                  : 'bg-white/10 text-brand hover:bg-brand/10',
+              ].join(' ')}
+            >
+              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: opsActive ? 'var(--brand-yellow)' : 'rgba(255,255,255,0.6)' }} />
+              {opsActive ? '運営タグ: 有効' : '運営タグ: 無効'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleDisabled(row, !row.login_disabled)}
+              disabled={pending}
+              className={[
+                'rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60',
+                row.login_disabled
+                  ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                  : 'bg-rose-500/15 text-rose-600 hover:bg-rose-500/25',
+              ].join(' ')}
+            >
+              {row.login_disabled ? '再開' : '停止'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDelete(row)}
+              disabled={pending}
+              className="rounded-md bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-100 shadow-sm transition hover:bg-rose-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              削除
+            </button>
+          </>
+        )}
       </div>
     );
   };
@@ -302,11 +437,15 @@ export default function UserTabs({
           showPhone
           showStatus
           renderActions={viewerRole === 'admin' ? (row) => renderStudentActions(row) : undefined}
+          opsTagOverrides={opsTagOverrides}
+          interviewOverrides={interviewOverrides}
         />
       ) : (
         <Table
           rows={ops}
           renderActions={viewerRole === 'admin' ? (row) => renderOpsActions(row) : undefined}
+          opsTagOverrides={opsTagOverrides}
+          interviewOverrides={interviewOverrides}
         />
       )}
     </div>
