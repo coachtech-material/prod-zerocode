@@ -76,6 +76,7 @@ export default function CourseContentList({
                       : isLocked
                         ? 'border-amber-500/40 bg-amber-500/15 text-amber-200'
                         : 'border-[color:var(--brand)]/50 bg-[color:var(--brand)]/12 text-[color:var(--brand)]';
+                    const displayTitle = isLocked ? `🔓 ${s.title}` : s.title;
                     return (
                       <tr
                         key={s.id}
@@ -85,12 +86,19 @@ export default function CourseContentList({
                             ? 'cursor-not-allowed bg-[color:var(--surface-1)]/40 text-[color:var(--muted)]'
                             : 'cursor-pointer hover:bg-[color:var(--brand)]/10 focus:bg-[color:var(--brand)]/12 focus:outline-none',
                         ].join(' ')}
-                        onClick={() => {
-                          if (isLocked) return;
+                        aria-disabled={isLocked}
+                        onClick={(event) => {
+                          if (isLocked) {
+                            event.preventDefault();
+                            return;
+                          }
                           router.push(`/courses/${courseId}/sections/${s.id}`);
                         }}
                         onKeyDown={(event) => {
-                          if (isLocked) return;
+                          if (isLocked) {
+                            event.preventDefault();
+                            return;
+                          }
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
                             router.push(`/courses/${courseId}/sections/${s.id}`);
@@ -102,7 +110,7 @@ export default function CourseContentList({
                         <td className="px-4 py-2 text-[color:var(--muted)]">{s.section_sort_key}</td>
                         <td className="px-4 py-2 text-[color:var(--text)]">
                           <span className="inline-flex max-w-full items-center gap-2 text-[color:var(--text)] underline decoration-transparent transition group-hover:decoration-[color:var(--brand)]">
-                            {s.title}
+                            <span className="truncate">{displayTitle}</span>
                           </span>
                         </td>
                         <td className="pl-3 pr-1 py-2 text-right">
@@ -133,6 +141,7 @@ export default function CourseContentList({
                   : isLocked
                     ? 'border-amber-500/40 bg-amber-500/15 text-amber-200'
                     : 'border-[color:var(--brand)]/50 bg-[color:var(--brand)]/12 text-[color:var(--brand)]';
+                const displayTitle = isLocked ? `🔓 ${s.title}` : s.title;
                 return (
                   <button
                     key={s.id}
@@ -158,7 +167,9 @@ export default function CourseContentList({
                         {statusLabel}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm font-semibold text-[color:var(--text)]">{s.title}</p>
+                    <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-[color:var(--text)]">
+                      <span className="truncate">{displayTitle}</span>
+                    </p>
                   </button>
                 );
               })}

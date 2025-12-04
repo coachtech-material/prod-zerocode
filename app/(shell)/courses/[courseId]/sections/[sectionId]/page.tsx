@@ -64,6 +64,7 @@ export default async function SectionView({ params }: { params: { courseId: stri
       limitIndexMap.set(item.id, orderIndex);
     }
   });
+  const firstLimitIndex = limitIndexMap.size ? Math.min(...Array.from(limitIndexMap.values())) : null;
   let highestLimitReached = -1;
   ordered.forEach((item, orderIndex) => {
     if (!limitIds.has(item.id)) return;
@@ -81,6 +82,9 @@ export default async function SectionView({ params }: { params: { courseId: stri
     const currentLimitIndex = limitIndexMap.get(params.sectionId);
     if (typeof currentLimitIndex === 'number') {
       highestLimitReached = Math.max(highestLimitReached, currentLimitIndex);
+    }
+    if (firstLimitIndex !== null) {
+      highestLimitReached = Math.max(highestLimitReached, firstLimitIndex);
     }
   }
   const lockedSections = new Set<string>();

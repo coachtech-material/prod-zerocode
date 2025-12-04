@@ -84,7 +84,7 @@ export default function SectionToc({
                 const active = s.id === currentSectionId;
                 const isCompleted = completedLookup.has(s.id) || s.is_completed;
                 const isLocked = lockedSet.has(s.id);
-                const label = isCompleted ? `✅ ${s.title}` : s.title;
+                const label = isLocked ? `🔓 ${s.title}` : isCompleted ? `✅ ${s.title}` : s.title;
                 if (isLocked && !active) {
                   return (
                     <li key={s.id}>
@@ -92,7 +92,7 @@ export default function SectionToc({
                         className="flex h-9 items-center rounded-lg pl-6 pr-2 text-xs text-[color:var(--muted)] opacity-70"
                         aria-disabled="true"
                       >
-                        <span className="inline-block max-w-[18rem] truncate align-middle">🔒 {s.title}</span>
+                        <span className="inline-block max-w-[18rem] truncate align-middle">{label}</span>
                       </div>
                     </li>
                   );

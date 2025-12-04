@@ -40,6 +40,7 @@ export default async function CourseDetailLearner({ params, searchParams }: { pa
       limitIndexMap.set(lesson.id as string, index);
     }
   });
+  const firstLimitIndex = limitIndexMap.size ? Math.min(...Array.from(limitIndexMap.values())) : null;
   let highestLimitReached = -1;
   sortedLessons.forEach((lesson: any, index: number) => {
     if (!limitIds.has(lesson.id as string)) return;
@@ -49,14 +50,22 @@ export default async function CourseDetailLearner({ params, searchParams }: { pa
     }
   });
   if (!profile.interview_completed) {
-    const currentProgressIndex = sortedLessons.findIndex((lesson: any) => progressMap.get(lesson.id)?.is_unlocked || progressMap.get(lesson.id)?.is_completed);
-    const maxUnlockedIndex = currentProgressIndex;
+    const maxUnlockedIndex = sortedLessons.reduce((max, lesson, idx) => {
+      const prog = progressMap.get(lesson.id);
+      if (prog?.is_completed || prog?.is_unlocked) {
+        return Math.max(max, idx);
+      }
+      return max;
+    }, -1);
     if (maxUnlockedIndex >= 0) {
       for (const [, limitIndex] of limitIndexMap) {
         if (limitIndex <= maxUnlockedIndex) {
           highestLimitReached = Math.max(highestLimitReached, limitIndex);
         }
       }
+    }
+    if (firstLimitIndex !== null) {
+      highestLimitReached = Math.max(highestLimitReached, firstLimitIndex);
     }
   }
   const lockedSections = new Set<string>();
