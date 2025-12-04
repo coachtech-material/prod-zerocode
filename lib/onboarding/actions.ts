@@ -3,6 +3,7 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseAdminClient } from '@/lib/supabase/service';
 import { validatePassword as validatePasswordField } from '@/lib/onboarding/validators';
 import { readOnboardingState, updateOnboardingState, clearOnboardingState } from '@/lib/onboarding/state';
 
@@ -68,6 +69,7 @@ export async function resendOnboardingEmail() {
 
 export async function markEmailVerified() {
   const supabase = createServerSupabaseClient();
+  const adminClient = createServerSupabaseAdminClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) {
     console.error('Failed to load auth user during onboarding verification', userError);
@@ -80,13 +82,13 @@ export async function markEmailVerified() {
 
   updateOnboardingState({ step: 3, verifiedAt: new Date().toISOString() });
 
-  const { error: upsertError } = await supabase.from('profiles').upsert({ id: user.id }, { onConflict: 'id' });
+  const { error: upsertError } = await adminClient.from('profiles').upsert({ id: user.id }, { onConflict: 'id' });
   if (upsertError) {
     console.error('Failed to upsert onboarding profile', upsertError);
     redirect('/register/verify?error=' + encodeURIComponent('プロフィール情報の更新に失敗しました。もう一度お試しください。'));
   }
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await adminClient
     .from('profiles')
     .update({ onboarding_step: 2 })
     .eq('id', user.id);
@@ -100,6 +102,7 @@ export async function markEmailVerified() {
 
 export async function setOnboardingPassword(formData: FormData) {
   const supabase = createServerSupabaseClient();
+  const adminClient = createServerSupabaseAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -125,7 +128,7 @@ export async function setOnboardingPassword(formData: FormData) {
     redirect('/register/password?error=' + encodeURIComponent(error.message));
   }
 
-  await supabase
+  await adminClient
     .from('profiles')
     .update({ onboarding_step: 3 })
     .eq('id', user.id);
@@ -166,6 +169,7 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 export async function completeOnboardingProfile(formData: FormData) {
   const supabase = createServerSupabaseClient();
+  const adminClient = createServerSupabaseAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     redirect('/register/email');
@@ -211,7 +215,7 @@ export async function completeOnboardingProfile(formData: FormData) {
     onboarding_completed: true,
   };
   if (avatarUrl) update.avatar_url = avatarUrl;
-  const { error: upErr } = await supabase.from('profiles').upsert({ id: user.id, ...update }, { onConflict: 'id' });
+  const { error: upErr } = await adminClient.from('profiles').upsert({ id: user.id, ...update }, { onConflict: 'id' });
   if (upErr) {
     redirect('/register/profile?error=' + encodeURIComponent(upErr.message));
   }
