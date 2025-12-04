@@ -143,8 +143,8 @@ export async function setInterviewTagAction(userId: string, completed: boolean) 
     signOutOnFail: true,
     requireOnboardingComplete: true,
   });
-  const adminClient = createServerSupabaseAdminClient();
-  const { error } = await adminClient
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase
     .from('profiles')
     .update({ interview_completed: completed, updated_at: new Date().toISOString() })
     .eq('id', userId);

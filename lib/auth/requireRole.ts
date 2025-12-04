@@ -58,7 +58,20 @@ async function resolveProfile(supabase: SupabaseClient, userId: string): Promise
   if (upsertError && String(upsertError.message || '').includes('ops_tagged')) {
     ({ data: upserted, error: upsertError } = await attemptUpsert(false));
   }
-  if (upsertError || !upserted) throw new Error('Failed to create profile');
+  if (upsertError || !upserted) {
+    console.error('Failed to upsert profile via authenticated client', upsertError);
+    const adminClient = createServerSupabaseAdminClient();
+    const { data: adminUpserted, error: adminError } = await adminClient
+      .from('profiles')
+      .upsert({ id: userId }, { onConflict: 'id' })
+      .select(columnSelection)
+      .single();
+    if (adminError || !adminUpserted) {
+      console.error('Failed to upsert profile via admin client', adminError);
+      throw new Error('Failed to create profile');
+    }
+    return adminUpserted as Profile;
+  }
   return upserted as Profile;
 }
 

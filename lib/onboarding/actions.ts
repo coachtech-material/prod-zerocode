@@ -68,17 +68,33 @@ export async function resendOnboardingEmail() {
 
 export async function markEmailVerified() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    console.error('Failed to load auth user during onboarding verification', userError);
+    redirect('/register/verify?error=' + encodeURIComponent('ログイン状態を確認してください'));
+  }
+  const user = userData?.user;
   if (!user) {
     redirect('/register/verify?error=' + encodeURIComponent('メール認証が完了していません'));
   }
 
   updateOnboardingState({ step: 3, verifiedAt: new Date().toISOString() });
-  await supabase.from('profiles').upsert({ id: user.id }, { onConflict: 'id' });
-  await supabase
+
+  const { error: upsertError } = await supabase.from('profiles').upsert({ id: user.id }, { onConflict: 'id' });
+  if (upsertError) {
+    console.error('Failed to upsert onboarding profile', upsertError);
+    redirect('/register/verify?error=' + encodeURIComponent('プロフィール情報の更新に失敗しました。もう一度お試しください。'));
+  }
+
+  const { error: updateError } = await supabase
     .from('profiles')
     .update({ onboarding_step: 2 })
     .eq('id', user.id);
+  if (updateError) {
+    console.error('Failed to update onboarding step', updateError);
+    redirect('/register/verify?error=' + encodeURIComponent('プロフィール情報の更新に失敗しました。もう一度お試しください。'));
+  }
+
   redirect('/register/password');
 }
 

@@ -53,16 +53,19 @@ export default function RegisterVerifyPage({ searchParams }: { searchParams?: Re
           <button type="submit" className="text-sm font-medium text-brand underline underline-offset-4">認証メールを再送</button>
         </form>
       </div>
-      <div className="space-y-3 border-t border-dashed border-brand-sky/30 pt-6 text-sm text-[color:var(--color-text-muted)]">
+      <form
+        id="verify-complete-form"
+        action={markEmailVerified}
+        className="space-y-3 border-t border-dashed border-brand-sky/30 pt-6 text-sm text-[color:var(--color-text-muted)]"
+      >
         <p>メールが認証されたら自動で次に進みます。手動で進む場合はこちら。</p>
-        <form id="verify-complete-form" action={markEmailVerified} />
         <button
-          form="verify-complete-form"
+          type="submit"
           className="inline-flex items-center justify-center rounded-xl bg-brand-sky px-4 py-2 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           認証が完了しました
         </button>
-      </div>
+      </form>
       <div className="text-sm text-[color:var(--color-text-muted)]">
         メール変更が必要ですか？{' '}
         <Link href="/register/email" className="font-medium text-brand underline underline-offset-4">メールアドレスを変更する</Link>
