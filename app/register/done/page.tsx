@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { readOnboardingState } from '@/lib/onboarding/state';
 import { requireRole } from '@/lib/auth/requireRole';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseAdminClient } from '@/lib/supabase/service';
 
 export default async function RegisterDonePage() {
   const { profile } = await requireRole(['user', 'staff', 'admin']);
@@ -12,8 +12,8 @@ export default async function RegisterDonePage() {
     redirect('/register/profile');
   }
 
-  const supabase = createServerSupabaseClient();
-  await supabase
+  const adminClient = createServerSupabaseAdminClient();
+  await adminClient
     .from('profiles')
     .update({ onboarding_step: 5, onboarding_completed: true })
     .eq('id', profile.id);

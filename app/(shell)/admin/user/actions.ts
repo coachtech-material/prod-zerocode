@@ -143,8 +143,8 @@ export async function setInterviewTagAction(userId: string, completed: boolean) 
     signOutOnFail: true,
     requireOnboardingComplete: true,
   });
-  const supabase = createServerSupabaseClient();
-  const { error } = await supabase
+  const adminClient = createServerSupabaseAdminClient();
+  const { error } = await adminClient
     .from('profiles')
     .update({ interview_completed: completed, updated_at: new Date().toISOString() })
     .eq('id', userId);
@@ -160,8 +160,8 @@ export async function setOpsTagAction(userId: string, tagged: boolean) {
     signOutOnFail: true,
     requireOnboardingComplete: true,
   });
-  const supabase = createServerSupabaseClient();
-  const { error } = await supabase
+  const adminClient = createServerSupabaseAdminClient();
+  const { error } = await adminClient
     .from('profiles')
     .update({ ops_tagged: tagged, updated_at: new Date().toISOString() })
     .eq('id', userId);

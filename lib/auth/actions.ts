@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, type Role } from '@/lib/supabase/server';
+import { createServerSupabaseAdminClient } from '@/lib/supabase/service';
 
 type PasswordSignInOptions = {
   formData: FormData;
@@ -15,9 +16,10 @@ type PasswordSignInOptions = {
   formatUnauthorizedMessage?: (role: Role | undefined) => string;
 };
 
-async function updateLastActiveAt(supabase: ReturnType<typeof createServerSupabaseClient>, userId: string) {
+async function updateLastActiveAt(userId: string) {
+  const adminClient = createServerSupabaseAdminClient();
   try {
-    await supabase
+    await adminClient
       .from('profiles')
       .update({ last_active_at: new Date().toISOString() })
       .eq('id', userId);
@@ -46,7 +48,8 @@ async function resolveUserRole(
   let role = profile?.role as Role | undefined;
 
   if (!role && createProfileIfMissing) {
-    const { data: upserted, error: upsertError } = await supabase
+    const adminClient = createServerSupabaseAdminClient();
+    const { data: upserted, error: upsertError } = await adminClient
       .from('profiles')
       .upsert({ id: userId, role: defaultRole }, { onConflict: 'id' })
       .select('role')
@@ -110,7 +113,7 @@ async function handlePasswordSignIn(options: PasswordSignInOptions) {
     failure(message);
   }
 
-  await updateLastActiveAt(supabase, userId!);
+  await updateLastActiveAt(userId!);
 
   redirect(successRedirect);
 }
@@ -145,7 +148,8 @@ export async function signUp(formData: FormData) {
   if (data.session) {
     try {
       const uid = data.session.user.id;
-      await supabase.from('profiles').update({ last_active_at: new Date().toISOString() }).eq('id', uid);
+      const adminClient = createServerSupabaseAdminClient();
+      await adminClient.from('profiles').update({ last_active_at: new Date().toISOString() }).eq('id', uid);
     } catch {}
     redirect('/dashboard');
   } else {

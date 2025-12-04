@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth/requireRole';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseAdminClient } from '@/lib/supabase/service';
 import ToastFromQuery from '@/components/ui/ToastFromQuery';
 import AvatarPicker from '@/components/settings/AvatarPicker';
 
@@ -112,7 +113,7 @@ import { revalidatePath } from 'next/cache';
 
 async function saveProfile(userId: string, role: string, formData: FormData) {
   "use server";
-  const supabase = createServerSupabaseClient();
+  const adminClient = createServerSupabaseAdminClient();
   const first_name = String(formData.get('first_name') || '').trim();
   const last_name = String(formData.get('last_name') || '').trim();
   const rawPhone = String(formData.get('phone') || '').trim();
@@ -145,18 +146,18 @@ async function saveProfile(userId: string, role: string, formData: FormData) {
     const buf = Buffer.from(await file.arrayBuffer());
     const ext = file.type.split('/')[1] || 'png';
     const path = `avatars/${userId}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, buf, { contentType: file.type, cacheControl: '3600', upsert: false });
+    const { error } = await adminClient.storage.from('avatars').upload(path, buf, { contentType: file.type, cacheControl: '3600', upsert: false });
     if (error) {
       redirect('/settings/profile?error=' + encodeURIComponent('画像の保存に失敗しました: ' + error.message));
     }
-    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { data: pub } = adminClient.storage.from('avatars').getPublicUrl(path);
     avatar_url = pub.publicUrl;
   }
 
   const update: any = { first_name, last_name, phone };
   if (avatar_url) update.avatar_url = avatar_url;
 
-  const { error: upErr } = await supabase
+  const { error: upErr } = await adminClient
     .from('profiles')
     .update(update)
     .eq('id', userId);

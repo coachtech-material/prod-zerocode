@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseAdminClient } from '@/lib/supabase/service';
 import { validatePassword } from '@/lib/onboarding/validators';
 import type { OpsOnboardingState } from './state';
 
@@ -10,6 +11,7 @@ export async function completeOpsOnboarding(
   formData: FormData,
 ): Promise<OpsOnboardingState> {
   const supabase = createServerSupabaseClient();
+  const adminClient = createServerSupabaseAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -36,7 +38,7 @@ export async function completeOpsOnboarding(
     return { error: passwordError.message };
   }
 
-  const { error: profileError } = await supabase
+  const { error: profileError } = await adminClient
     .from('profiles')
     .update({
       login_disabled: false,
