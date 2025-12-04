@@ -198,11 +198,11 @@ export async function completeOnboardingProfile(formData: FormData) {
     const buf = Buffer.from(await file.arrayBuffer());
     const ext = file.type.split('/')[1] || 'png';
     const path = `avatars/${user.id}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, buf, { contentType: file.type, cacheControl: '3600', upsert: false });
+    const { error } = await adminClient.storage.from('avatars').upload(path, buf, { contentType: file.type, cacheControl: '3600', upsert: false });
     if (error) {
       redirect('/register/profile?error=' + encodeURIComponent('画像の保存に失敗しました: ' + error.message));
     }
-    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { data: pub } = adminClient.storage.from('avatars').getPublicUrl(path);
     avatarUrl = pub.publicUrl;
   }
 
